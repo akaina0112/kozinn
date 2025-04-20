@@ -351,11 +351,11 @@
         <span class="preview-value" id="previewDaysUntilBirthday">-</span>
       </div>
       <div class="preview-item">
-        <span class="preview-label">現在の年齢:</span>
+        <span class="preview-label">現在の年齢は:</span>
         <span class="preview-value" id="previewCurrentAge">-</span>
       </div>
       <div class="preview-item">
-        <span class="preview-label">今年で年齢:</span>
+        <span class="preview-label">今年で年齢は:</span>
         <span class="preview-value" id="previewSchoolGrade">-</span>
       </div>
     </div>
@@ -500,10 +500,10 @@
         currentAge--;
       }
 
-      document.getElementById('previewDaysSinceStart').textContent = `付き合ってから ${daysSinceStart} 日目です。`;
-      document.getElementById('previewDaysUntilBirthday').textContent = `誕生日まであと ${daysUntilBirthday} 日です。`;
-      document.getElementById('previewCurrentAge').textContent = `現在 ${currentAge} 歳です。`;
-      document.getElementById('previewSchoolGrade').textContent = `今年で:${currentAge + 1}`;
+      document.getElementById('previewDaysSinceStart').textContent = `${daysSinceStart} 日目です。`;
+      document.getElementById('previewDaysUntilBirthday').textContent = `${daysUntilBirthday} 日です。`;
+      document.getElementById('previewCurrentAge').textContent = `${currentAge} 歳です。`;
+      document.getElementById('previewSchoolGrade').textContent = `${currentAge + 1}`;
     }
 
     function updatePreview() {
