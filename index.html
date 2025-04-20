@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>大切な日 - 衛星マップ対応</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4CAF50">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <style>
     body {
@@ -351,11 +353,11 @@
         <span class="preview-value" id="previewDaysUntilBirthday">-</span>
       </div>
       <div class="preview-item">
-        <span class="preview-label">現在の年齢は:</span>
+        <span class="preview-label">現在の年齢:</span>
         <span class="preview-value" id="previewCurrentAge">-</span>
       </div>
       <div class="preview-item">
-        <span class="preview-label">今年で年齢は:</span>
+        <span class="preview-label">今年で年齢:</span>
         <span class="preview-value" id="previewSchoolGrade">-</span>
       </div>
     </div>
@@ -377,15 +379,15 @@
     let watchId = null;
     let notificationPermission = false;
 
-    // 通知音の設定
-    const alertSound = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU1vT18=');
-
     // 通知の許可をリクエスト
-    function requestNotificationPermission() {
+    async function requestNotificationPermission() {
       if ('Notification' in window) {
-        Notification.requestPermission().then(permission => {
+        try {
+          const permission = await Notification.requestPermission();
           notificationPermission = permission === 'granted';
-        });
+        } catch (error) {
+          console.error('Notification permission error:', error);
+        }
       }
     }
 
@@ -420,13 +422,15 @@
     // アラートを表示
     function showAlert() {
       // 音声アラート
+      const alertSound = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU1vT18=');
       alertSound.play();
 
       // 通知
       if (notificationPermission) {
         new Notification('危険区域に入りました！', {
           body: '危険区域に入りました。注意してください。',
-          icon: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
+          icon: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+          vibrate: [100, 50, 100]
         });
       }
     }
@@ -437,6 +441,12 @@
         navigator.geolocation.clearWatch(watchId);
       }
 
+      const options = {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+      };
+
       watchId = navigator.geolocation.watchPosition(
         position => {
           const lat = position.coords.latitude;
@@ -445,12 +455,11 @@
         },
         error => {
           console.error('位置情報の取得に失敗しました:', error);
+          if (error.code === error.PERMISSION_DENIED) {
+            alert('位置情報の使用が許可されていません。設定から許可してください。');
+          }
         },
-        {
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 0
-        }
+        options
       );
     }
 
@@ -500,10 +509,10 @@
         currentAge--;
       }
 
-      document.getElementById('previewDaysSinceStart').textContent = `${daysSinceStart} 日目です。`;
-      document.getElementById('previewDaysUntilBirthday').textContent = `${daysUntilBirthday} 日です。`;
-      document.getElementById('previewCurrentAge').textContent = `${currentAge} 歳です。`;
-      document.getElementById('previewSchoolGrade').textContent = `${currentAge + 1}`;
+      document.getElementById('previewDaysSinceStart').textContent = `付き合ってから ${daysSinceStart} 日目です。`;
+      document.getElementById('previewDaysUntilBirthday').textContent = `誕生日まであと ${daysUntilBirthday} 日です。`;
+      document.getElementById('previewCurrentAge').textContent = `現在 ${currentAge} 歳です。`;
+      document.getElementById('previewSchoolGrade').textContent = `今年で:${currentAge + 1}`;
     }
 
     function updatePreview() {
@@ -616,6 +625,7 @@
 
     window.onload = function () {
       requestNotificationPermission();
+      startLocationWatch();
       displayDangerZones();
       if (coupleDate && birthdayDate) {
         calculateDays();
