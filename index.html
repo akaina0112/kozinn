@@ -234,6 +234,35 @@
       z-index: 1000;
     }
 
+    .view-toggle {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    .view-toggle button {
+      padding: 10px 20px;
+      margin: 0 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #f0f0f0;
+      transition: background-color 0.3s;
+    }
+
+    .view-toggle button.active {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .view-content {
+      display: none;
+    }
+
+    .view-content.active {
+      display: block;
+    }
+
     @media (max-width: 768px) {
       .settings-content {
         width: 95%;
@@ -297,43 +326,53 @@
 
   <h1>大切な日アプリ</h1>
 
-  <div class="preview-container">
-    <h2>プレビュー</h2>
-    <div class="preview-item">
-      <span class="preview-label">付き合い始めた日:</span>
-      <span class="preview-value" id="previewCoupleDate">未設定</span>
-    </div>
-    <div class="preview-item">
-      <span class="preview-label">誕生日:</span>
-      <span class="preview-value" id="previewBirthdayDate">未設定</span>
-    </div>
-    <div class="preview-item">
-      <span class="preview-label">経過日数:</span>
-      <span class="preview-value" id="previewDaysSinceStart">-</span>
-    </div>
-    <div class="preview-item">
-      <span class="preview-label">誕生日までの日数:</span>
-      <span class="preview-value" id="previewDaysUntilBirthday">-</span>
-    </div>
-    <div class="preview-item">
-      <span class="preview-label">現在の年齢:</span>
-      <span class="preview-value" id="previewCurrentAge">-</span>
-    </div>
-    <div class="preview-item">
-      <span class="preview-label">今年で年齢:</span>
-      <span class="preview-value" id="previewSchoolGrade">-</span>
+  <div class="view-toggle">
+    <button id="datesViewBtn" class="active" onclick="switchView('dates')">大切な日</button>
+    <button id="dangerZonesViewBtn" onclick="switchView('dangerZones')">危険区域</button>
+  </div>
+
+  <div id="datesView" class="view-content active">
+    <div class="preview-container">
+      <h2>プレビュー</h2>
+      <div class="preview-item">
+        <span class="preview-label">付き合い始めた日:</span>
+        <span class="preview-value" id="previewCoupleDate">未設定</span>
+      </div>
+      <div class="preview-item">
+        <span class="preview-label">誕生日:</span>
+        <span class="preview-value" id="previewBirthdayDate">未設定</span>
+      </div>
+      <div class="preview-item">
+        <span class="preview-label">経過日数:</span>
+        <span class="preview-value" id="previewDaysSinceStart">-</span>
+      </div>
+      <div class="preview-item">
+        <span class="preview-label">誕生日までの日数:</span>
+        <span class="preview-value" id="previewDaysUntilBirthday">-</span>
+      </div>
+      <div class="preview-item">
+        <span class="preview-label">現在の年齢:</span>
+        <span class="preview-value" id="previewCurrentAge">-</span>
+      </div>
+      <div class="preview-item">
+        <span class="preview-label">今年で年齢:</span>
+        <span class="preview-value" id="previewSchoolGrade">-</span>
+      </div>
     </div>
   </div>
 
-  <div class="danger-zone-distance" id="dangerZoneDistance">
-    <h2>危険区域までの距離</h2>
-    <div id="dangerZoneDistanceList"></div>
+  <div id="dangerZonesView" class="view-content">
+    <div class="danger-zone-distance" id="dangerZoneDistance">
+      <h2>危険区域までの距離</h2>
+      <div id="dangerZoneDistanceList"></div>
+    </div>
   </div>
 
   <script>
     let coupleDate = localStorage.getItem('coupleDate') || '';
     let birthdayDate = localStorage.getItem('birthdayDate') || '';
     let dangerZones = JSON.parse(localStorage.getItem('dangerZones') || '[]');
+    let currentView = localStorage.getItem('currentView') || 'dates';
     let map;
     let watchId = null;
     let notificationPermission = false;
@@ -559,6 +598,22 @@
       }
     }
 
+    function switchView(view) {
+      // ボタンのアクティブ状態を切り替え
+      document.getElementById('datesViewBtn').classList.remove('active');
+      document.getElementById('dangerZonesViewBtn').classList.remove('active');
+      document.getElementById(`${view}ViewBtn`).classList.add('active');
+
+      // 表示内容を切り替え
+      document.getElementById('datesView').classList.remove('active');
+      document.getElementById('dangerZonesView').classList.remove('active');
+      document.getElementById(`${view}View`).classList.add('active');
+
+      // 現在の表示設定を保存
+      currentView = view;
+      localStorage.setItem('currentView', view);
+    }
+
     window.onload = function () {
       requestNotificationPermission();
       displayDangerZones();
@@ -566,6 +621,9 @@
         calculateDays();
       }
       updatePreview();
+
+      // 保存された表示設定を適用
+      switchView(currentView);
 
       map = L.map('map').setView([35.6895, 139.6917], 13);
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
