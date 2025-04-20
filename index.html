@@ -91,6 +91,7 @@
   <h2>経過日数と残り日数</h2>
   <p id="daysSinceStart">付き合ってからの経過日数: </p>
   <p id="daysUntilBirthday">誕生日までの残り日数: </p>
+  <p id="ageOnBirthday">誕生日の年齢: </p>
 
   <div class="form-container">
     <h2>設定</h2>
@@ -104,31 +105,27 @@
   <div class="form-container">
     <h2>危険区域管理</h2>
     <button onclick="addDangerZonePrompt()">危険区域を追加</button>
-    <div id="dangerZoneList" class="danger-zone-list"><div class="danger-zone-item">緯度: 33.023081956572206, 経度: 133.00749421119693, 半径: 30 m 
-                          <button onclick="removeDangerZone(1745135368402)">削除</button></div><div class="danger-zone-item">緯度: 33.03214456313121, 経度: 133.0077999842446, 半径: 100 m 
-                          <button onclick="removeDangerZone(1745135390554)">削除</button></div><div class="danger-zone-item">緯度: 33.02564299601573, 経度: 133.00857782363894, 半径: 50 m 
-                          <button onclick="removeDangerZone(1745135413402)">削除</button></div><div class="danger-zone-item">緯度: 33.025022315169245, 経度: 133.00862073898318, 半径: 50 m 
-                          <button onclick="removeDangerZone(1745135422214)">削除</button></div><div class="danger-zone-item">緯度: 33.02519322772248, 経度: 133.0093824863434, 半径: 50 m 
-                          <button onclick="removeDangerZone(1745135427470)">削除</button></div><div class="danger-zone-item">緯度: 33.01569625609265, 経度: 132.99166917800906, 半径: 50 m 
-                          <button onclick="removeDangerZone(1745135450456)">削除</button></div><div class="danger-zone-item">緯度: 33.01535439382965, 経度: 132.99098253250125, 半径: 50 m 
-                          <button onclick="removeDangerZone(1745135454816)">削除</button></div><div class="danger-zone-item">緯度: 33.02906383042941, 経度: 133.0131268501282, 半径: 10 m 
-                          <button onclick="removeDangerZone(1745135478542)">削除</button></div><div class="danger-zone-item">緯度: 33.02918526276182, 経度: 133.01312148571017, 半径: 10 m 
-                          <button onclick="removeDangerZone(1745135484677)">削除</button></div><div class="danger-zone-item">緯度: 33.029095312902044, 経度: 133.01296055316928, 半径: 30 m 
-                          <button onclick="removeDangerZone(1745135500104)">削除</button></div></div>
+    <div id="dangerZoneList" class="danger-zone-list"></div>
   </div>
 
   <div id="map"></div>
 
   <script>
-    let coupleDate, birthdayDate;
+    let coupleDate = localStorage.getItem('coupleDate') || '';
+    let birthdayDate = localStorage.getItem('birthdayDate') || '';
     let dangerZones = JSON.parse(localStorage.getItem('dangerZones') || '[]');
     let map;
+
+    document.getElementById('coupleDate').value = coupleDate;
+    document.getElementById('birthdayDate').value = birthdayDate;
 
     function saveDates() {
       coupleDate = document.getElementById('coupleDate').value;
       birthdayDate = document.getElementById('birthdayDate').value;
 
       if (coupleDate && birthdayDate) {
+        localStorage.setItem('coupleDate', coupleDate);
+        localStorage.setItem('birthdayDate', birthdayDate);
         calculateDays();
       } else {
         alert('日付が正しく入力されていません。');
@@ -141,10 +138,19 @@
       const birthdayDateParsed = new Date(birthdayDate);
 
       const daysSinceStart = Math.floor((now - coupleDateParsed) / (1000 * 60 * 60 * 24));
-      const daysUntilBirthday = Math.floor((birthdayDateParsed - now) / (1000 * 60 * 60 * 24));
+
+      const nextBirthday = new Date(now.getFullYear(), birthdayDateParsed.getMonth(), birthdayDateParsed.getDate());
+      if (now > nextBirthday) {
+        nextBirthday.setFullYear(nextBirthday.getFullYear() + 1);
+      }
+      const daysUntilBirthday = Math.ceil((nextBirthday - now) / (1000 * 60 * 60 * 24));
+
+      let birthYear = birthdayDateParsed.getFullYear();
+      const age = nextBirthday.getFullYear() - birthYear;
 
       document.getElementById('daysSinceStart').textContent = `付き合ってから ${daysSinceStart} 日目です。`;
       document.getElementById('daysUntilBirthday').textContent = `誕生日まであと ${daysUntilBirthday} 日です。`;
+      document.getElementById('ageOnBirthday').textContent = `その日には ${age} 歳になります。`;
     }
 
     function addDangerZonePrompt() {
@@ -188,6 +194,9 @@
 
     window.onload = function () {
       displayDangerZones();
+      if (coupleDate && birthdayDate) {
+        calculateDays();
+      }
 
       map = L.map('map').setView([35.6895, 139.6917], 13);
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
