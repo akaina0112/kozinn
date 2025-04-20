@@ -184,6 +184,75 @@
     .settings-tab-content.active {
       display: block;
     }
+
+    .danger-zone-distance {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .danger-zone-distance-item {
+      margin: 10px 0;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-radius: 5px;
+    }
+
+    .map-container {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1002;
+    }
+
+    .map-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      height: 80%;
+      background-color: white;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .close-map {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      z-index: 1000;
+    }
+
+    @media (max-width: 768px) {
+      .settings-content {
+        width: 95%;
+        max-width: none;
+      }
+
+      .preview-container {
+        margin: 10px;
+      }
+
+      .form-container {
+        margin: 10px;
+      }
+
+      .settings-button {
+        padding: 8px 16px;
+        font-size: 14px;
+      }
+    }
   </style>
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 </head>
@@ -219,6 +288,13 @@
     </div>
   </div>
 
+  <div class="map-container" id="mapContainer">
+    <div class="map-content">
+      <div class="close-map" onclick="closeMap()">&times;</div>
+      <div id="map"></div>
+    </div>
+  </div>
+
   <h1>大切な日アプリ</h1>
 
   <div class="preview-container">
@@ -249,7 +325,10 @@
     </div>
   </div>
 
-  <div id="map"></div>
+  <div class="danger-zone-distance" id="dangerZoneDistance">
+    <h2>危険区域までの距離</h2>
+    <div id="dangerZoneDistanceList"></div>
+  </div>
 
   <script>
     let coupleDate = localStorage.getItem('coupleDate') || '';
@@ -385,7 +464,7 @@
       document.getElementById('previewDaysSinceStart').textContent = `付き合ってから ${daysSinceStart} 日目です。`;
       document.getElementById('previewDaysUntilBirthday').textContent = `誕生日まであと ${daysUntilBirthday} 日です。`;
       document.getElementById('previewCurrentAge').textContent = `現在 ${currentAge} 歳です。`;
-      document.getElementById('previewSchoolGrade').textContent = `今年で ${currentAge + 1} 歳です。`;
+      document.getElementById('previewSchoolGrade').textContent = `今年で:${currentAge + 1}`;
     }
 
     function updatePreview() {
@@ -398,6 +477,7 @@
     }
 
     function addDangerZonePrompt() {
+      openMap();
       alert('地図上をクリックして危険区域を追加してください。');
     }
 
@@ -450,6 +530,35 @@
       document.getElementById(`${tabName}Tab`).classList.add('active');
     }
 
+    function openMap() {
+      document.getElementById('mapContainer').style.display = 'block';
+      map.invalidateSize();
+    }
+
+    function closeMap() {
+      document.getElementById('mapContainer').style.display = 'none';
+    }
+
+    function updateDangerZoneDistances() {
+      const distanceList = document.getElementById('dangerZoneDistanceList');
+      distanceList.innerHTML = '';
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+          const currentLat = position.coords.latitude;
+          const currentLng = position.coords.longitude;
+
+          dangerZones.forEach(zone => {
+            const distance = calculateDistance(currentLat, currentLng, zone.lat, zone.lng);
+            const div = document.createElement('div');
+            div.className = 'danger-zone-distance-item';
+            div.textContent = `危険区域まで ${Math.round(distance)}m`;
+            distanceList.appendChild(div);
+          });
+        });
+      }
+    }
+
     window.onload = function () {
       requestNotificationPermission();
       displayDangerZones();
@@ -465,7 +574,10 @@
       }).addTo(map);
 
       renderZonesOnMap();
-      startLocationWatch();
+      updateDangerZoneDistances();
+
+      // 定期的に距離を更新
+      setInterval(updateDangerZoneDistances, 5000);
 
       map.on('click', function(e) {
         const lat = e.latlng.lat;
@@ -482,6 +594,8 @@
           localStorage.setItem('dangerZones', JSON.stringify(dangerZones));
           displayDangerZones();
           renderZonesOnMap();
+          updateDangerZoneDistances();
+          closeMap();
         }
       });
     };
