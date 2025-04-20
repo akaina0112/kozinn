@@ -200,6 +200,17 @@
       padding: 10px;
       background-color: #f8f9fa;
       border-radius: 5px;
+      transition: all 0.3s ease;
+    }
+
+    .distance-value {
+      display: inline-block;
+      min-width: 100px;
+      text-align: right;
+    }
+
+    .distance-updating {
+      opacity: 0.5;
     }
 
     .map-container {
@@ -589,20 +600,41 @@
 
     function updateDangerZoneDistances() {
       const distanceList = document.getElementById('dangerZoneDistanceList');
-      distanceList.innerHTML = '';
-
+      
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(position => {
           const currentLat = position.coords.latitude;
           const currentLng = position.coords.longitude;
 
-          dangerZones.forEach(zone => {
+          // 既存の要素を更新
+          const existingItems = distanceList.querySelectorAll('.danger-zone-distance-item');
+          dangerZones.forEach((zone, index) => {
             const distance = calculateDistance(currentLat, currentLng, zone.lat, zone.lng);
-            const div = document.createElement('div');
-            div.className = 'danger-zone-distance-item';
-            div.textContent = `危険区域まで ${Math.round(distance)}m`;
-            distanceList.appendChild(div);
+            const roundedDistance = Math.round(distance);
+            
+            if (existingItems[index]) {
+              // 既存の要素を更新
+              const distanceValue = existingItems[index].querySelector('.distance-value');
+              if (distanceValue) {
+                distanceValue.classList.add('distance-updating');
+                setTimeout(() => {
+                  distanceValue.textContent = `${roundedDistance}m`;
+                  distanceValue.classList.remove('distance-updating');
+                }, 150);
+              }
+            } else {
+              // 新しい要素を追加
+              const div = document.createElement('div');
+              div.className = 'danger-zone-distance-item';
+              div.innerHTML = `危険区域まで <span class="distance-value">${roundedDistance}m</span>`;
+              distanceList.appendChild(div);
+            }
           });
+
+          // 余分な要素を削除
+          while (existingItems.length > dangerZones.length) {
+            distanceList.removeChild(existingItems[existingItems.length - 1]);
+          }
         });
       }
     }
@@ -644,8 +676,8 @@
       renderZonesOnMap();
       updateDangerZoneDistances();
 
-      // 定期的に距離を更新
-      setInterval(updateDangerZoneDistances, 5000);
+      // 定期的な更新の間隔を短くして、よりスムーズに
+      setInterval(updateDangerZoneDistances, 2000);
 
       map.on('click', function(e) {
         const lat = e.latlng.lat;
