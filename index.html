@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>大切な日 - 経過日数、残り日数と危険区域通知</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <title>大切な日 - 衛星マップ対応</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -17,7 +16,6 @@
     #map {
       height: 400px;
       width: 100%;
-      margin-top: 20px;
     }
 
     .form-container {
@@ -26,24 +24,43 @@
       border-radius: 8px;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       margin-top: 20px;
+      margin-bottom: 20px;
     }
 
-    input, button {
+    .form-container input, .form-container button {
       width: 100%;
       margin: 5px 0;
       padding: 10px;
       font-size: 16px;
     }
 
-    button {
+    .form-container button {
       background-color: #4CAF50;
       color: white;
       border: none;
       cursor: pointer;
     }
 
-    button:hover {
+    .form-container button:hover {
       background-color: #45a049;
+    }
+
+    h1, h2 {
+      color: #333;
+    }
+
+    p {
+      font-size: 16px;
+      margin: 5px 0;
+    }
+
+    #daysSinceStart, #daysUntilBirthday {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .danger-zone-list {
+      margin-top: 20px;
     }
 
     .danger-zone-item {
@@ -58,8 +75,15 @@
     .danger-zone-item button {
       background-color: #ff0000;
       color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .danger-zone-item button:hover {
+      background-color: #cc0000;
     }
   </style>
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 </head>
 <body>
   <h1>大切な日アプリ</h1>
@@ -78,119 +102,104 @@
   </div>
 
   <div class="form-container">
-    <h2>危険区域管理（マップをクリックして追加）</h2>
-    <div id="dangerZoneList"></div>
+    <h2>危険区域管理</h2>
+    <button onclick="addDangerZonePrompt()">危険区域を追加</button>
+    <div id="dangerZoneList" class="danger-zone-list"></div>
   </div>
 
   <div id="map"></div>
 
   <script>
     let coupleDate, birthdayDate;
-    let dangerZones = [];
+    let dangerZones = JSON.parse(localStorage.getItem('dangerZones') || '[]');
     let map;
 
     function saveDates() {
-      coupleDate = document.getElementById("coupleDate").value;
-      birthdayDate = document.getElementById("birthdayDate").value;
-      localStorage.setItem("coupleDate", coupleDate);
-      localStorage.setItem("birthdayDate", birthdayDate);
-      calculateDays();
+      coupleDate = document.getElementById('coupleDate').value;
+      birthdayDate = document.getElementById('birthdayDate').value;
+
+      if (coupleDate && birthdayDate) {
+        calculateDays();
+      } else {
+        alert('日付が正しく入力されていません。');
+      }
     }
 
     function calculateDays() {
       const now = new Date();
-      const start = new Date(coupleDate);
-      const birthday = new Date(birthdayDate);
-      const daysSince = Math.floor((now - start) / (1000 * 60 * 60 * 24));
-      const nextBirthday = new Date(now.getFullYear(), birthday.getMonth(), birthday.getDate());
-      if (nextBirthday < now) nextBirthday.setFullYear(now.getFullYear() + 1);
-      const daysUntil = Math.ceil((nextBirthday - now) / (1000 * 60 * 60 * 24));
+      const coupleDateParsed = new Date(coupleDate);
+      const birthdayDateParsed = new Date(birthdayDate);
 
-      document.getElementById("daysSinceStart").textContent = `付き合ってから ${daysSince} 日目です。`;
-      document.getElementById("daysUntilBirthday").textContent = `誕生日まであと ${daysUntil} 日です。`;
+      const daysSinceStart = Math.floor((now - coupleDateParsed) / (1000 * 60 * 60 * 24));
+      const daysUntilBirthday = Math.floor((birthdayDateParsed - now) / (1000 * 60 * 60 * 24));
+
+      document.getElementById('daysSinceStart').textContent = `付き合ってから ${daysSinceStart} 日目です。`;
+      document.getElementById('daysUntilBirthday').textContent = `誕生日まであと ${daysUntilBirthday} 日です。`;
     }
 
-    function loadDates() {
-      coupleDate = localStorage.getItem("coupleDate") || "";
-      birthdayDate = localStorage.getItem("birthdayDate") || "";
-      document.getElementById("coupleDate").value = coupleDate;
-      document.getElementById("birthdayDate").value = birthdayDate;
-      if (coupleDate && birthdayDate) calculateDays();
+    function addDangerZonePrompt() {
+      alert('地図上をクリックして危険区域を追加してください。');
     }
 
-    function saveDangerZones() {
-      const zones = dangerZones.map(z => ({ lat: z.lat, lng: z.lng, radius: z.radius }));
-      localStorage.setItem("dangerZones", JSON.stringify(zones));
-    }
-
-    function loadDangerZones() {
-      const saved = localStorage.getItem("dangerZones");
-      if (saved) {
-        const zones = JSON.parse(saved);
-        zones.forEach(z => addDangerZone(z.lat, z.lng, z.radius));
-      }
-    }
-
-    function addDangerZone(lat, lng, radius) {
-      const circle = L.circle([lat, lng], {
-        radius,
-        color: "red",
-        fillColor: "#f03",
-        fillOpacity: 0.4
-      }).addTo(map);
-      dangerZones.push({ lat, lng, radius, circle });
+    function removeDangerZone(id) {
+      dangerZones = dangerZones.filter(zone => zone.id !== id);
+      localStorage.setItem('dangerZones', JSON.stringify(dangerZones));
       displayDangerZones();
-      saveDangerZones();
-    }
-
-    function removeDangerZone(index) {
-      map.removeLayer(dangerZones[index].circle);
-      dangerZones.splice(index, 1);
-      displayDangerZones();
-      saveDangerZones();
+      renderZonesOnMap();
     }
 
     function displayDangerZones() {
-      const list = document.getElementById("dangerZoneList");
-      list.innerHTML = "";
-      dangerZones.forEach((z, i) => {
-        const item = document.createElement("div");
-        item.className = "danger-zone-item";
-        item.innerHTML = `緯度: ${z.lat.toFixed(4)}, 経度: ${z.lng.toFixed(4)}, 半径: ${(z.radius / 1000).toFixed(1)} km
-          <button onclick="removeDangerZone(${i})">削除</button>`;
-        list.appendChild(item);
+      const list = document.getElementById('dangerZoneList');
+      list.innerHTML = '';
+      dangerZones.forEach(zone => {
+        const div = document.createElement('div');
+        div.className = 'danger-zone-item';
+        div.innerHTML = `緯度: ${zone.lat}, 経度: ${zone.lng}, 半径: ${zone.radius / 1000} km 
+                          <button onclick="removeDangerZone(${zone.id})">削除</button>`;
+        list.appendChild(div);
       });
     }
 
-    function initMap() {
-      map = L.map("map").setView([35.6895, 139.6917], 12);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; OpenStreetMap contributors'
+    function renderZonesOnMap() {
+      dangerZones.forEach(zone => {
+        L.circle([zone.lat, zone.lng], {
+          radius: zone.radius,
+          color: 'red',
+          fillColor: '#f03',
+          fillOpacity: 0.3
+        }).addTo(map);
+      });
+    }
+
+    window.onload = function () {
+      displayDangerZones();
+
+      map = L.map('map').setView([35.6895, 139.6917], 13);
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
+        maxZoom: 18,
       }).addTo(map);
 
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(pos => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          L.marker([lat, lng]).addTo(map).bindPopup("現在地").openPopup();
-        });
-      }
+      renderZonesOnMap();
 
-      map.on("click", e => {
-        const radiusKm = prompt("危険区域の半径を km 単位で入力してください", "1");
-        if (radiusKm) {
-          const radius = parseFloat(radiusKm) * 1000;
-          addDangerZone(e.latlng.lat, e.latlng.lng, radius);
+      map.on('click', function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+        const radius = parseInt(prompt("半径（km）を入力してください")) * 1000;
+        if (radius && !isNaN(radius)) {
+          const newZone = {
+            lat: lat,
+            lng: lng,
+            radius: radius,
+            id: Date.now()
+          };
+          dangerZones.push(newZone);
+          localStorage.setItem('dangerZones', JSON.stringify(dangerZones));
+          displayDangerZones();
+          renderZonesOnMap();
         }
       });
-
-      loadDangerZones();
-    }
-
-    window.onload = () => {
-      loadDates();
-      initMap();
-    }
+    };
   </script>
 </body>
 </html>
