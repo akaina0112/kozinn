@@ -92,6 +92,7 @@
   <p id="daysSinceStart">付き合ってからの経過日数: </p>
   <p id="daysUntilBirthday">誕生日までの残り日数: </p>
   <p id="ageOnBirthday">誕生日の年齢: </p>
+  <p id="schoolGrade">学年: </p>
 
   <div class="form-container">
     <h2>設定</h2>
@@ -132,6 +133,16 @@
       }
     }
 
+    function getSchoolGrade(age) {
+      if (age >= 6 && age <= 15) {
+        const grade = age - 5;
+        return grade <= 6 ? `小${grade}` : `中${grade - 6}`;
+      } else if (age >= 16 && age <= 18) {
+        return `高${age - 15}`;
+      }
+      return '対象外';
+    }
+
     function calculateDays() {
       const now = new Date();
       const coupleDateParsed = new Date(coupleDate);
@@ -147,10 +158,12 @@
 
       let birthYear = birthdayDateParsed.getFullYear();
       const age = nextBirthday.getFullYear() - birthYear;
+      const schoolGrade = getSchoolGrade(age);
 
       document.getElementById('daysSinceStart').textContent = `付き合ってから ${daysSinceStart} 日目です。`;
       document.getElementById('daysUntilBirthday').textContent = `誕生日まであと ${daysUntilBirthday} 日です。`;
       document.getElementById('ageOnBirthday').textContent = `その日には ${age} 歳になります。`;
+      document.getElementById('schoolGrade').textContent = `学年: ${schoolGrade}`;
     }
 
     function addDangerZonePrompt() {
