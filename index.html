@@ -244,7 +244,7 @@
       <span class="preview-value" id="previewCurrentAge">-</span>
     </div>
     <div class="preview-item">
-      <span class="preview-label">現在の学年:</span>
+      <span class="preview-label">今年で年齢:</span>
       <span class="preview-value" id="previewSchoolGrade">-</span>
     </div>
   </div>
@@ -362,16 +362,6 @@
       }
     }
 
-    function getSchoolGrade(age) {
-      if (age >= 6 && age <= 15) {
-        const grade = age - 5;
-        return grade <= 6 ? `小${grade}` : `中${grade - 6}`;
-      } else if (age >= 16 && age <= 18) {
-        return `高${age - 15}`;
-      }
-      return '対象外';
-    }
-
     function calculateDays() {
       const now = new Date();
       const coupleDateParsed = new Date(coupleDate);
@@ -392,13 +382,10 @@
         currentAge--;
       }
 
-      // 現在の学年を計算
-      const currentSchoolGrade = getSchoolGrade(currentAge);
-
       document.getElementById('previewDaysSinceStart').textContent = `付き合ってから ${daysSinceStart} 日目です。`;
       document.getElementById('previewDaysUntilBirthday').textContent = `誕生日まであと ${daysUntilBirthday} 日です。`;
       document.getElementById('previewCurrentAge').textContent = `現在 ${currentAge} 歳です。`;
-      document.getElementById('previewSchoolGrade').textContent = `学年: ${currentSchoolGrade}`;
+      document.getElementById('previewSchoolGrade').textContent = `今年で:${currentAge + 1}`;
     }
 
     function updatePreview() {
