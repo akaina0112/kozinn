@@ -116,6 +116,85 @@
     let birthdayDate = localStorage.getItem('birthdayDate') || '';
     let dangerZones = JSON.parse(localStorage.getItem('dangerZones') || '[]');
     let map;
+    let watchId = null;
+    let notificationPermission = false;
+
+    // 通知音の設定
+    const alertSound = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU1vT18=');
+
+    // 通知の許可をリクエスト
+    function requestNotificationPermission() {
+      if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+          notificationPermission = permission === 'granted';
+        });
+      }
+    }
+
+    // 危険区域チェック
+    function checkDangerZone(lat, lng) {
+      for (const zone of dangerZones) {
+        const distance = calculateDistance(lat, lng, zone.lat, zone.lng);
+        if (distance <= zone.radius) {
+          showAlert();
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // 2点間の距離を計算（メートル）
+    function calculateDistance(lat1, lng1, lat2, lng2) {
+      const R = 6371000; // 地球の半径（メートル）
+      const dLat = toRad(lat2 - lat1);
+      const dLng = toRad(lng2 - lng1);
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * 
+                Math.sin(dLng/2) * Math.sin(dLng/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    function toRad(degrees) {
+      return degrees * Math.PI / 180;
+    }
+
+    // アラートを表示
+    function showAlert() {
+      // 音声アラート
+      alertSound.play();
+
+      // 通知
+      if (notificationPermission) {
+        new Notification('危険区域に入りました！', {
+          body: '危険区域に入りました。注意してください。',
+          icon: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
+        });
+      }
+    }
+
+    // 位置情報の監視を開始
+    function startLocationWatch() {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+
+      watchId = navigator.geolocation.watchPosition(
+        position => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          checkDangerZone(lat, lng);
+        },
+        error => {
+          console.error('位置情報の取得に失敗しました:', error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0
+        }
+      );
+    }
 
     document.getElementById('coupleDate').value = coupleDate;
     document.getElementById('birthdayDate').value = birthdayDate;
@@ -206,6 +285,7 @@
     }
 
     window.onload = function () {
+      requestNotificationPermission();
       displayDangerZones();
       if (coupleDate && birthdayDate) {
         calculateDays();
@@ -218,6 +298,7 @@
       }).addTo(map);
 
       renderZonesOnMap();
+      startLocationWatch();
 
       map.on('click', function(e) {
         const lat = e.latlng.lat;
