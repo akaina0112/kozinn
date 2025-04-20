@@ -235,14 +235,20 @@
       }
       const daysUntilBirthday = Math.ceil((nextBirthday - now) / (1000 * 60 * 60 * 24));
 
-      let birthYear = birthdayDateParsed.getFullYear();
-      const age = nextBirthday.getFullYear() - birthYear;
-      const schoolGrade = getSchoolGrade(age);
+      // 現在の年齢を計算
+      let currentAge = now.getFullYear() - birthdayDateParsed.getFullYear();
+      const monthDiff = now.getMonth() - birthdayDateParsed.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birthdayDateParsed.getDate())) {
+        currentAge--;
+      }
+
+      // 現在の学年を計算
+      const currentSchoolGrade = getSchoolGrade(currentAge);
 
       document.getElementById('daysSinceStart').textContent = `付き合ってから ${daysSinceStart} 日目です。`;
       document.getElementById('daysUntilBirthday').textContent = `誕生日まであと ${daysUntilBirthday} 日です。`;
-      document.getElementById('ageOnBirthday').textContent = `その日には ${age} 歳になります。`;
-      document.getElementById('schoolGrade').textContent = `学年: ${schoolGrade}`;
+      document.getElementById('ageOnBirthday').textContent = `現在 ${currentAge} 歳です。`;
+      document.getElementById('schoolGrade').textContent = `学年: ${currentSchoolGrade}`;
     }
 
     function addDangerZonePrompt() {
