@@ -154,13 +154,18 @@
       dangerZones.forEach(zone => {
         const div = document.createElement('div');
         div.className = 'danger-zone-item';
-        div.innerHTML = `緯度: ${zone.lat}, 経度: ${zone.lng}, 半径: ${zone.radius / 1000} km 
+        div.innerHTML = `緯度: ${zone.lat}, 経度: ${zone.lng}, 半径: ${zone.radius} m 
                           <button onclick="removeDangerZone(${zone.id})">削除</button>`;
         list.appendChild(div);
       });
     }
 
     function renderZonesOnMap() {
+      map.eachLayer(layer => {
+        if (layer instanceof L.Circle) {
+          map.removeLayer(layer);
+        }
+      });
       dangerZones.forEach(zone => {
         L.circle([zone.lat, zone.lng], {
           radius: zone.radius,
@@ -185,7 +190,7 @@
       map.on('click', function(e) {
         const lat = e.latlng.lat;
         const lng = e.latlng.lng;
-        const radius = parseInt(prompt("半径（km）を入力してください")) * 1000;
+        const radius = parseInt(prompt("半径（m）を入力してください"));
         if (radius && !isNaN(radius)) {
           const newZone = {
             lat: lat,
