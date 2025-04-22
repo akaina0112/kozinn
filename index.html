@@ -317,6 +317,8 @@
           <input type="date" id="coupleDate">
           <label for="birthdayDate">誕生日</label>
           <input type="date" id="birthdayDate">
+          <label for="birthdayDate">出会った日</label>
+          <input type="date" id="birthdayDate2">
           <button onclick="saveDates()">設定を保存</button>
         </div>
       </div>
@@ -350,6 +352,10 @@
       <div class="preview-item">
         <span class="preview-label">付き合い始めた日:</span>
         <span class="preview-value" id="previewCoupleDate">未設定</span>
+      </div>
+      <div class="preview-item">
+        <span class="preview-label">出会った日:</span>
+        <span class="preview-value" id="previewCoupleDate2">未設定</span>
       </div>
       <div class="preview-item">
         <span class="preview-label">誕生日:</span>
@@ -388,6 +394,7 @@
   <script>
     let coupleDate = localStorage.getItem('coupleDate2') || '';
     let birthdayDate = localStorage.getItem('birthdayDate2') || '';
+    let birthdayDate3 = localStorage.getItem('birthdayDate3') || '';
     let dangerZones = JSON.parse(localStorage.getItem('dangerZones') || '[]');
     let currentView = localStorage.getItem('currentView') || 'dates';
     let map;
@@ -480,6 +487,7 @@
 
     document.getElementById('coupleDate').value = coupleDate;
     document.getElementById('birthdayDate').value = birthdayDate;
+    document.getElementById('birthdayDate2').value = birthdayDate2;
 
     function openSettings() {
       document.getElementById('settingsScreen').style.display = 'block';
@@ -492,10 +500,12 @@
     function saveDates() {
       coupleDate = document.getElementById('coupleDate').value;
       birthdayDate = document.getElementById('birthdayDate').value;
+      birthdayDate2 = document.getElementById('birthdayDate2').value;
 
-      if (coupleDate && birthdayDate) {
+      if (coupleDate && birthdayDate && birthdayDate2) {
         localStorage.setItem('coupleDate2', coupleDate);
-        localStorage.setItem('birthdayDate2', birthdayDate);
+        localStorage.setItem('birthdayDate2', birthdayDate):
+        localStorage.setItem('birthdayDate3', birthdayDate2);
         calculateDays();
         updatePreview();
         closeSettings();
@@ -508,8 +518,10 @@
       const now = new Date();
       const coupleDateParsed = new Date(coupleDate);
       const birthdayDateParsed = new Date(birthdayDate);
+      const birthdayDateParsed2 = new Date(birthdayDate2);
 
       const daysSinceStart = Math.floor((now - coupleDateParsed) / (1000 * 60 * 60 * 24));
+      const daysSinceStart2 = Math.floor((now -  birthdayDateParsed2) / (1000 * 60 * 60 * 24));
 
       const nextBirthday = new Date(now.getFullYear(), birthdayDateParsed.getMonth(), birthdayDateParsed.getDate());
       if (now > nextBirthday) {
@@ -528,12 +540,13 @@
       document.getElementById('previewDaysUntilBirthday').textContent = `${daysUntilBirthday} 日です。`;
       document.getElementById('previewCurrentAge').textContent = `${currentAge} 歳です。`;
       document.getElementById('previewSchoolGrade').textContent = `${currentAge + 1} 歳です。`;
-      document.getElementById('previewSchoolGrade2').textContent = `${currentAge * 260}`;
+      document.getElementById('previewSchoolGrade2').textContent = `${daysSinceStart2 * 260}`;
     }
 
     function updatePreview() {
       document.getElementById('previewCoupleDate').textContent = coupleDate || '未設定';
       document.getElementById('previewBirthdayDate').textContent = birthdayDate || '未設定';
+      document.getElementById('previewBirthdayDate2').textContent = birthdayDate2 || '未設定';
       document.getElementById('previewDaysSinceStart').textContent = document.getElementById('previewDaysSinceStart').textContent;
       document.getElementById('previewDaysUntilBirthday').textContent = document.getElementById('previewDaysUntilBirthday').textContent;
       document.getElementById('previewCurrentAge').textContent = document.getElementById('previewCurrentAge').textContent;
