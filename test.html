@@ -342,21 +342,11 @@
         <div class="form-container">
           <label for="coupleDate">付き合い始めた日</label>
           <input type="date" id="coupleDate">
+          <label for="meetingDate">出会った日</label>
+          <input type="date" id="meetingDate">
           <label for="birthdayDate">誕生日</label>
           <input type="date" id="birthdayDate">
           <button onclick="saveDates()">設定を保存</button>
-        </div>
-        <div class="calendar-container" style="margin-top: 20px;">
-          <h3>大切な日を追加</h3>
-          <div id="calendar"></div>
-          <div id="dateForm" style="display: none; margin-top: 10px;">
-            <input type="text" id="dateName" placeholder="大切な日の名前">
-            <button onclick="saveNewDate()">追加</button>
-          </div>
-          <div id="intimacyForm" style="display: none; margin-top: 10px;">
-            <input type="number" id="intimacyPoints" placeholder="親密度ポイント">
-            <button onclick="saveNewIntimacy()">追加</button>
-          </div>
         </div>
       </div>
 
@@ -400,27 +390,30 @@
             <span class="preview-label">付き合い始めた日:</span>
             <span class="preview-value" id="previewCoupleDate">未設定</span>
           </div>
-          <button onclick="deleteCoupleDate()" style="background-color: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">削除</button>
         </div>
+      </div>
+      <div class="preview-item">
+        <span class="preview-label">出会った日:</span>
+        <span class="preview-value" id="previewMeetingDate">未設定</span>
       </div>
       <div class="preview-item">
         <span class="preview-label">誕生日:</span>
         <span class="preview-value" id="previewBirthdayDate">未設定</span>
       </div>
       <div class="preview-item">
-        <span class="preview-label">経過日数:</span>
-        <span class="preview-value" id="previewDaysSinceStart">-</span>
+        <span class="preview-label">出会ってからの日数:</span>
+        <span class="preview-value" id="previewDaysSinceMeeting">-</span>
       </div>
       <div class="preview-item">
         <span class="preview-label">誕生日までの日数:</span>
         <span class="preview-value" id="previewDaysUntilBirthday">-</span>
       </div>
       <div class="preview-item">
-        <span class="preview-label">現在の年齢:</span>
+        <span class="preview-label">現在は　</span>
         <span class="preview-value" id="previewCurrentAge">-</span>
       </div>
       <div class="preview-item">
-        <span class="preview-label">今年で年齢:</span>
+        <span class="preview-label">今年で　</span>
         <span class="preview-value" id="previewSchoolGrade">-</span>
       </div>
       <div class="preview-item">
@@ -443,6 +436,7 @@
 
   <script>
     let coupleDate = localStorage.getItem('coupleDate') || '';
+    let meetingDate = localStorage.getItem('meetingDate') || '';
     let birthdayDate = localStorage.getItem('birthdayDate') || '';
     let dangerZones = JSON.parse(localStorage.getItem('dangerZones') || '[]');
     let currentView = localStorage.getItem('currentView') || 'dates';
@@ -540,6 +534,7 @@
     }
 
     document.getElementById('coupleDate').value = coupleDate;
+    document.getElementById('meetingDate').value = meetingDate;
     document.getElementById('birthdayDate').value = birthdayDate;
 
     function openSettings() {
@@ -552,15 +547,18 @@
 
     function saveDates() {
       coupleDate = document.getElementById('coupleDate').value;
+      meetingDate = document.getElementById('meetingDate').value;
       birthdayDate = document.getElementById('birthdayDate').value;
 
-      if (coupleDate && birthdayDate) {
+      if (coupleDate && meetingDate && birthdayDate) {
         const profile = profiles.find(p => p.id === currentProfileId);
         if (profile) {
           profile.coupleDate = coupleDate;
+          profile.meetingDate = meetingDate;
           profile.birthdayDate = birthdayDate;
           localStorage.setItem('profiles', JSON.stringify(profiles));
           localStorage.setItem(`profile_${currentProfileId}_coupleDate`, coupleDate);
+          localStorage.setItem(`profile_${currentProfileId}_meetingDate`, meetingDate);
           localStorage.setItem(`profile_${currentProfileId}_birthdayDate`, birthdayDate);
           calculateDays();
           updatePreview();
@@ -574,9 +572,11 @@
     function calculateDays() {
       const now = new Date();
       const coupleDateParsed = new Date(coupleDate);
+      const meetingDateParsed = new Date(meetingDate);
       const birthdayDateParsed = new Date(birthdayDate);
 
       const daysSinceStart = Math.floor((now - coupleDateParsed) / (1000 * 60 * 60 * 24));
+      const daysSinceMeeting = Math.floor((now - meetingDateParsed) / (1000 * 60 * 60 * 24));
 
       const nextBirthday = new Date(now.getFullYear(), birthdayDateParsed.getMonth(), birthdayDateParsed.getDate());
       if (now > nextBirthday) {
@@ -591,22 +591,12 @@
         currentAge--;
       }
 
-      // 親密度の計算
-      let totalIntimacyPoints = 0;
-      const profileDates = importantDates.filter(d => d.profileId === currentProfileId);
-      profileDates.forEach(date => {
-        const dateObj = new Date(date.date);
-        const daysSince = Math.floor((now - dateObj) / (1000 * 60 * 60 * 24));
-        if (daysSince >= 0) {
-          totalIntimacyPoints += daysSince * 260;
-        }
-      });
-
-      document.getElementById('previewDaysSinceStart').textContent = coupleDate ? `付き合ってから ${daysSinceStart} 日目です。` : '-';
-      document.getElementById('previewDaysUntilBirthday').textContent = `誕生日まであと ${daysUntilBirthday} 日です。`;
-      document.getElementById('previewCurrentAge').textContent = `現在 ${currentAge} 歳です。`;
-      document.getElementById('previewSchoolGrade').textContent = `今年で:${currentAge + 1}`;
-      document.getElementById('previewIntimacyPoints').textContent = `に:${totalIntimacyPoints.toLocaleString()} ポイント`;
+      document.getElementById('previewDaysSinceStart').textContent = coupleDate ? ` ${daysSinceStart} 日目です。` : '-';
+      document.getElementById('previewDaysSinceMeeting').textContent = meetingDate ? ` ${daysSinceMeeting} 日目です。` : '-';
+      document.getElementById('previewDaysUntilBirthday').textContent = ` ${daysUntilBirthday} 日です。`;
+      document.getElementById('previewCurrentAge').textContent = ` ${currentAge} 歳`;
+      document.getElementById('previewSchoolGrade').textContent = `${currentAge + 1}　歳`;
+      document.getElementById('previewIntimacyPoints').textContent = `${(daysSinceMeeting * 260).toLocaleString()}`;
     }
 
     function calculateIntimacyPoints(startDate) {
@@ -617,13 +607,118 @@
     }
 
     function updatePreview() {
-      document.getElementById('previewCoupleDate').textContent = coupleDate || '未設定';
-      document.getElementById('previewBirthdayDate').textContent = birthdayDate || '未設定';
-      document.getElementById('previewDaysSinceStart').textContent = document.getElementById('previewDaysSinceStart').textContent;
-      document.getElementById('previewDaysUntilBirthday').textContent = document.getElementById('previewDaysUntilBirthday').textContent;
-      document.getElementById('previewCurrentAge').textContent = document.getElementById('previewCurrentAge').textContent;
-      document.getElementById('previewSchoolGrade').textContent = document.getElementById('previewSchoolGrade').textContent;
-      document.getElementById('previewIntimacyPoints').textContent = document.getElementById('previewIntimacyPoints').textContent;
+      const previewContainer = document.getElementById('datesView');
+      previewContainer.innerHTML = '';
+
+      if (coupleDate) {
+        const coupleDiv = document.createElement('div');
+        coupleDiv.className = 'preview-item';
+        coupleDiv.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span class="preview-label">付き合い始めた日:</span>
+              <span class="preview-value">${coupleDate}</span>
+            </div>
+          </div>
+        `;
+        previewContainer.appendChild(coupleDiv);
+      }
+
+      if (meetingDate) {
+        const meetingDiv = document.createElement('div');
+        meetingDiv.className = 'preview-item';
+        meetingDiv.innerHTML = `
+          <div>
+            <span class="preview-label">出会った日:</span>
+            <span class="preview-value">${meetingDate}</span>
+          </div>
+        `;
+        previewContainer.appendChild(meetingDiv);
+      }
+
+      if (birthdayDate) {
+        const birthdayDiv = document.createElement('div');
+        birthdayDiv.className = 'preview-item';
+        birthdayDiv.innerHTML = `
+          <div>
+            <span class="preview-label">誕生日:</span>
+            <span class="preview-value">${birthdayDate}</span>
+          </div>
+        `;
+        previewContainer.appendChild(birthdayDiv);
+      }
+
+      const daysSinceStart = document.getElementById('previewDaysSinceStart').textContent;
+      if (daysSinceStart !== '-') {
+        const daysSinceStartDiv = document.createElement('div');
+        daysSinceStartDiv.className = 'preview-item';
+        daysSinceStartDiv.innerHTML = `
+          <div>
+            <span class="preview-value">${daysSinceStart}</span>
+          </div>
+        `;
+        previewContainer.appendChild(daysSinceStartDiv);
+      }
+
+      const daysSinceMeeting = document.getElementById('previewDaysSinceMeeting').textContent;
+      if (daysSinceMeeting !== '-') {
+        const daysSinceMeetingDiv = document.createElement('div');
+        daysSinceMeetingDiv.className = 'preview-item';
+        daysSinceMeetingDiv.innerHTML = `
+          <div>
+            <span class="preview-value">${daysSinceMeeting}</span>
+          </div>
+        `;
+        previewContainer.appendChild(daysSinceMeetingDiv);
+      }
+
+      const daysUntilBirthday = document.getElementById('previewDaysUntilBirthday').textContent;
+      if (daysUntilBirthday !== '-') {
+        const daysUntilBirthdayDiv = document.createElement('div');
+        daysUntilBirthdayDiv.className = 'preview-item';
+        daysUntilBirthdayDiv.innerHTML = `
+          <div>
+            <span class="preview-value">${daysUntilBirthday}</span>
+          </div>
+        `;
+        previewContainer.appendChild(daysUntilBirthdayDiv);
+      }
+
+      const currentAge = document.getElementById('previewCurrentAge').textContent;
+      if (currentAge !== '-') {
+        const currentAgeDiv = document.createElement('div');
+        currentAgeDiv.className = 'preview-item';
+        currentAgeDiv.innerHTML = `
+          <div>
+            <span class="preview-value">${currentAge}</span>
+          </div>
+        `;
+        previewContainer.appendChild(currentAgeDiv);
+      }
+
+      const schoolGrade = document.getElementById('previewSchoolGrade').textContent;
+      if (schoolGrade !== '-') {
+        const schoolGradeDiv = document.createElement('div');
+        schoolGradeDiv.className = 'preview-item';
+        schoolGradeDiv.innerHTML = `
+          <div>
+            <span class="preview-value">${schoolGrade}</span>
+          </div>
+        `;
+        previewContainer.appendChild(schoolGradeDiv);
+      }
+
+      const intimacyPoints = document.getElementById('previewIntimacyPoints').textContent;
+      if (intimacyPoints !== '-') {
+        const intimacyDiv = document.createElement('div');
+        intimacyDiv.className = 'preview-item';
+        intimacyDiv.innerHTML = `
+          <div>
+            <span class="preview-value">${intimacyPoints}</span>
+          </div>
+        `;
+        previewContainer.appendChild(intimacyDiv);
+      }
     }
 
     function removeImportantDate(id) {
@@ -787,12 +882,14 @@
       if (!profile) return;
       
       coupleDate = localStorage.getItem(`profile_${currentProfileId}_coupleDate`) || '';
+      meetingDate = localStorage.getItem(`profile_${currentProfileId}_meetingDate`) || '';
       birthdayDate = localStorage.getItem(`profile_${currentProfileId}_birthdayDate`) || '';
       importantDates = JSON.parse(localStorage.getItem(`profile_${currentProfileId}_importantDates`) || '[]');
       intimacyPoints = JSON.parse(localStorage.getItem(`profile_${currentProfileId}_intimacyPoints`) || '[]');
       
       document.title = profile.title || '大切な日 - 衛星マップ対応';
       document.getElementById('coupleDate').value = coupleDate;
+      document.getElementById('meetingDate').value = meetingDate;
       document.getElementById('birthdayDate').value = birthdayDate;
       calculateDays();
       updatePreview();
@@ -890,6 +987,7 @@
         name: name, 
         title: title,
         coupleDate: '', 
+        meetingDate: '', 
         birthdayDate: '' 
       };
       profiles.push(newProfile);
@@ -929,7 +1027,7 @@
       startLocationWatch();
       displayDangerZones();
       renderCalendar();
-      if (coupleDate && birthdayDate) {
+      if (coupleDate && meetingDate && birthdayDate) {
         calculateDays();
       }
       updatePreview();
