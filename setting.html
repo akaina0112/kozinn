@@ -130,6 +130,25 @@
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js';
     document.head.appendChild(script);
 
+    // レート制限の設定
+    const rateLimit = {
+      maxRequests: 3, // 最大リクエスト数
+      timeWindow: 60000, // 時間枠（ミリ秒）
+      requests: [] // リクエスト履歴
+    };
+
+    // レート制限をチェックする関数
+    function checkRateLimit() {
+      const now = Date.now();
+      rateLimit.requests = rateLimit.requests.filter(time => now - time < rateLimit.timeWindow);
+      return rateLimit.requests.length < rateLimit.maxRequests;
+    }
+
+    // リクエストを記録する関数
+    function recordRequest() {
+      rateLimit.requests.push(Date.now());
+    }
+
     const customReplies = [
       { keywords: ["こんにちは", "こんばんは"], reply: "やっほー！ロリウルフちゃんが来たよ〜" },
       { keywords: ["あなたは誰に作られたの？"], reply: "うp主…っていう人らしいけど…よく分かんないの…" }
@@ -163,7 +182,14 @@
         return;
       }
 
+      // レート制限をチェック
+      if (!checkRateLimit()) {
+        addMessage("ごめんね、ちょっと待ってね！たくさん話しかけられすぎて疲れちゃったの…", false);
+        return;
+      }
+
       try {
+        recordRequest();
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -188,6 +214,10 @@
         });
 
         if (!response.ok) {
+          if (response.status === 429) {
+            addMessage("ごめんね、ちょっと待ってね！たくさん話しかけられすぎて疲れちゃったの…", false);
+            return;
+          }
           throw new Error(`API error: ${response.status}`);
         }
 
