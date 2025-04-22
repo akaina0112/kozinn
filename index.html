@@ -371,6 +371,10 @@
         <span class="preview-label">今年で年齢:</span>
         <span class="preview-value" id="previewSchoolGrade">-</span>
       </div>
+      <div class="preview-item">
+        <span class="preview-label">親密度:</span>
+        <span class="preview-value" id="previewSchoolGrade2">-</span>
+      </div>
     </div>
   </div>
 
@@ -524,6 +528,7 @@
       document.getElementById('previewDaysUntilBirthday').textContent = `誕生日まであと ${daysUntilBirthday} 日です。`;
       document.getElementById('previewCurrentAge').textContent = `現在 ${currentAge} 歳です。`;
       document.getElementById('previewSchoolGrade').textContent = `今年で:${currentAge + 1}`;
+      document.getElementById('previewSchoolGrade2').textContent = `今年で:${currentAge * 260}`;
     }
 
     function updatePreview() {
@@ -533,6 +538,7 @@
       document.getElementById('previewDaysUntilBirthday').textContent = document.getElementById('previewDaysUntilBirthday').textContent;
       document.getElementById('previewCurrentAge').textContent = document.getElementById('previewCurrentAge').textContent;
       document.getElementById('previewSchoolGrade').textContent = document.getElementById('previewSchoolGrade').textContent;
+      document.getElementById('previewSchoolGrade2').textContent = document.getElementById('previewSchoolGrade2').textContent;
     }
 
     function addDangerZonePrompt() {
