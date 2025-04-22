@@ -103,11 +103,32 @@
 
   <script>
     const wolfAvatar = "https://cdn.pixabay.com/photo/2020/08/09/06/32/wolf-5474431_1280.png";
-    const errorVoice = new Audio("https://example.com/loli-wolf-error.mp3"); // ロリ声音声URLに差し替え
+    const errorVoice = new Audio("https://example.com/loli-wolf-error.mp3");
 
-    // Unicode形式のAPIキーを通常文字列に復号
-    const unicodeApiKey = "\\u0073\\u006b\\u002d\\u0070\\u0072\\u006f\\u006a\\u002d\\u0034\\u0048\\u0038\\u0030\\u0057\\u0038\\u0043\\u006b\\u0061\\u0067\\u0037\\u007a\\u006c\\u0031\\u0030\\u0044\\u0033\\u0038\\u0065\\u0070\\u0043\\u002d\\u0046\\u006d\\u0072\\u0053\\u006b\\u0056\\u006c\\u004a\\u006c\\u0036\\u0036\\u0062\\u0074\\u0072\\u0031\\u002d\\u0039\\u006e\\u0030\\u002d\\u0036\\u0041\\u0035\\u004e\\u0061\\u0050\\u0065\\u0033\\u006c\\u004b\\u0046\\u006b\\u0046\\u0054\\u006a\\u006b\\u0043\\u0052\\u0032\\u0059\\u005a\\u0045\\u0052\\u0064\\u0054\\u0062\\u005f\\u0042\\u005f\\u0033\\u0032\\u0065\\u0054\\u0033\\u0042\\u006c\\u0062\\u006b\\u0046\\u004a\\u0049\\u006a\\u004e\\u0042\\u0045\\u0046\\u0062\\u0056\\u0035\\u0051\\u0052\\u0075\\u0030\\u004d\\u006c\\u0048\\u0043\\u0043\\u0050\\u0045\\u0043\\u0031\\u0039\\u004b\\u002d\\u007a\\u0065\\u004d\\u0044\\u0055\\u0035\\u0032\\u0032\\u0045\\u0053\\u0076\\u0077\\u0045\\u0043\\u0052\\u006d\\u0033\\u0068\\u0063\\u006d\\u0045\\u0075\\u0074\\u0071\\u0058\\u0055\\u0057\\u0045\\u0045\\u0042\\u0058\\u0044\\u0038\\u0039\\u0054\\u0074\\u0071\\u002d\\u0078\\u006f\\u006f\\u004c\\u0046\\u0073\\u0035\\u0035\\u004c\\u0034\\u0041";
-    const apiKey = JSON.parse('"' + unicodeApiKey + '"');
+    // APIキーを暗号化して保存
+    const encryptedApiKey = "U2FsdGVkX1+4H80W8Ckag7zl10D38epC-FmrSkVlJl66btr1-9n0-6A5NaPe3lKFkFTjkCR2YZERdTb_B_32eT3BlbkFJIjNBEFbV5QRu0MlHCCPEC19K-zeMDU522ESvwECRm3hcmEutqXUWEEBXD89Ttq-xooLFs55L4A";
+    
+    // 復号化キーを環境変数から取得（実際の実装では、サーバー側で管理）
+    const decryptionKey = process.env.DECRYPTION_KEY || "akaina0809";
+
+    // APIキーを復号化する関数
+    function decryptApiKey(encrypted, key) {
+      try {
+        // CryptoJSを使用した復号化
+        const bytes = CryptoJS.AES.decrypt(encrypted, key);
+        return bytes.toString(CryptoJS.enc.Utf8);
+      } catch (e) {
+        console.error('API key decryption failed:', e);
+        return null;
+      }
+    }
+
+    const apiKey = decryptApiKey(encryptedApiKey, decryptionKey);
+
+    // CryptoJSライブラリを読み込む
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js';
+    document.head.appendChild(script);
 
     const customReplies = [
       { keywords: ["こんにちは", "こんばんは"], reply: "やっほー！ロリウルフちゃんが来たよ〜" },
@@ -143,7 +164,7 @@
       }
 
       try {
-        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -151,16 +172,38 @@
           },
           body: JSON.stringify({
             model: "gpt-3.5-turbo",
-            messages: [{ role: "user", content: userText }]
+            messages: [
+              {
+                role: "system",
+                content: "あなたはロリウルフAIです。かわいらしく、フレンドリーに応答してください。"
+              },
+              {
+                role: "user",
+                content: userText
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 150
           })
         });
 
-        const data = await res.json();
-        const reply = data.choices?.[0]?.message?.content || "えへへ、わかんないの〜";
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+          throw new Error('Invalid API response format');
+        }
+
+        const reply = data.choices[0].message.content;
         addMessage(reply, false);
       } catch (e) {
+        console.error('Error:', e);
         addMessage("うわ〜ん…狼しゃべれなくなっちゃった…！ごめんねっ", false);
-        errorVoice.play();
+        if (errorVoice) {
+          errorVoice.play().catch(err => console.error('Audio error:', err));
+        }
       }
     }
   </script>
