@@ -394,7 +394,7 @@
   <script>
     let coupleDate = localStorage.getItem('coupleDate2') || '';
     let birthdayDate = localStorage.getItem('birthdayDate2') || '';
-    let birthdayDate3 = localStorage.getItem('birthdayDate3') || '';
+    let birthdayDate2 = localStorage.getItem('birthdayDate3') || '';
     let dangerZones = JSON.parse(localStorage.getItem('dangerZones') || '[]');
     let currentView = localStorage.getItem('currentView') || 'dates';
     let map;
@@ -547,11 +547,11 @@
       document.getElementById('previewCoupleDate').textContent = coupleDate || '未設定';
       document.getElementById('previewBirthdayDate').textContent = birthdayDate || '未設定';
       document.getElementById('previewCoupleDate2').textContent = birthdayDate2 || '未設定';
-      document.getElementById('previewDaysSinceStart').textContent = document.getElementById('previewDaysSinceStart').textContent;
-      document.getElementById('previewDaysUntilBirthday').textContent = document.getElementById('previewDaysUntilBirthday').textContent;
-      document.getElementById('previewCurrentAge').textContent = document.getElementById('previewCurrentAge').textContent;
-      document.getElementById('previewSchoolGrade').textContent = document.getElementById('previewSchoolGrade').textContent;
-      document.getElementById('previewSchoolGrade2').textContent = document.getElementById('previewSchoolGrade2').textContent;
+      document.getElementById('previewDaysSinceStart').textContent = document.getElementById('previewDaysSinceStart').textContent  || '未設定';
+      document.getElementById('previewDaysUntilBirthday').textContent = document.getElementById('previewDaysUntilBirthday').textContent  || '未設定';
+      document.getElementById('previewCurrentAge').textContent = document.getElementById('previewCurrentAge').textContent  || '未設定';
+      document.getElementById('previewSchoolGrade').textContent = document.getElementById('previewSchoolGrade').textContent  || '未設定';
+      document.getElementById('previewSchoolGrade2').textContent = document.getElementById('previewSchoolGrade2').textContent  || '未設定';
     }
 
     function addDangerZonePrompt() {
