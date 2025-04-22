@@ -187,6 +187,7 @@
       if (method === 'date') {
         dateInput.style.display = 'block';
         daysInput.style.display = 'none';
+        document.getElementById(section === 1 ? 'meetingDate' : 'anniversaryDate').disabled = false;
       } else {
         dateInput.style.display = 'none';
         daysInput.style.display = 'block';
@@ -242,7 +243,9 @@
         const calculatedDate = new Date(now);
         calculatedDate.setDate(now.getDate() - parseInt(daysSinceMeeting));
         const formattedDate = calculatedDate.toISOString().split('T')[0];
-        document.getElementById('meetingDate').value = formattedDate;
+        const dateInput = document.getElementById('meetingDate');
+        dateInput.value = formattedDate;
+        dateInput.disabled = false;
         document.getElementById('previewDaysSinceMeeting').textContent = `\n\n${daysSinceMeeting} 日目で\n${daysSinceMeeting * 260} です。`;
       }
 
@@ -255,7 +258,9 @@
         const calculatedDate = new Date(now);
         calculatedDate.setDate(now.getDate() - parseInt(daysSinceAnniversary));
         const formattedDate = calculatedDate.toISOString().split('T')[0];
-        document.getElementById('anniversaryDate').value = formattedDate;
+        const dateInput = document.getElementById('anniversaryDate');
+        dateInput.value = formattedDate;
+        dateInput.disabled = false;
         document.getElementById('previewDaysSinceAnniversary').textContent = `${daysSinceAnniversary} 日目で ${daysSinceAnniversary * 260} です。`;
       }
     }
