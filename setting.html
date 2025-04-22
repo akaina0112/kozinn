@@ -108,8 +108,8 @@
     // APIキーを暗号化して保存
     const encryptedApiKey = "U2FsdGVkX1+4H80W8Ckag7zl10D38epC-FmrSkVlJl66btr1-9n0-6A5NaPe3lKFkFTjkCR2YZERdTb_B_32eT3BlbkFJIjNBEFbV5QRu0MlHCCPEC19K-zeMDU522ESvwECRm3hcmEutqXUWEEBXD89Ttq-xooLFs55L4A";
     
-    // 復号化キーを環境変数から取得（実際の実装では、サーバー側で管理）
-    const decryptionKey = process.env.DECRYPTION_KEY || "akaina0809";
+    // 復号化キーを直接設定
+    const decryptionKey = "akaina0809";
 
     // APIキーを復号化する関数
     function decryptApiKey(encrypted, key) {
