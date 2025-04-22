@@ -295,6 +295,25 @@
         font-size: 14px;
       }
     }
+
+    .profile-button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .profile-button:hover {
+      background-color: #45a049;
+    }
+
+    .profile-button.active {
+      background-color: #2E7D32;
+      box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    }
   </style>
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 </head>
@@ -337,9 +356,11 @@
       </div>
 
       <div class="profile-container" style="margin-bottom: 10px;">
-        <select id="profileSelect" onchange="switchProfile()"></select>
-        <button onclick="addProfile()" style="margin-left: 10px;">新規プロフィール</button>
-        <button onclick="updateProfileTitle()" style="margin-left: 10px;">タイトル変更</button>
+        <div id="profileButtons" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;"></div>
+        <div style="display: flex; gap: 10px;">
+          <button onclick="addProfile()" class="profile-button">新規プロフィール</button>
+          <button onclick="updateProfileTitle()" class="profile-button">タイトル変更</button>
+        </div>
       </div>
     </div>
   </div>
@@ -362,8 +383,13 @@
     <div class="preview-container">
       <h2>プレビュー</h2>
       <div class="preview-item">
-        <span class="preview-label">付き合い始めた日:</span>
-        <span class="preview-value" id="previewCoupleDate">未設定</span>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span class="preview-label">付き合い始めた日:</span>
+            <span class="preview-value" id="previewCoupleDate">未設定</span>
+          </div>
+          <button onclick="deleteCoupleDate()" style="background-color: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">削除</button>
+        </div>
       </div>
       <div class="preview-item">
         <span class="preview-label">誕生日:</span>
@@ -529,7 +555,6 @@
       const birthdayDateParsed = new Date(birthdayDate);
 
       const daysSinceStart = Math.floor((now - coupleDateParsed) / (1000 * 60 * 60 * 24));
-      const intimacyPoints = daysSinceStart * 260; // 一日260ポイント
 
       const nextBirthday = new Date(now.getFullYear(), birthdayDateParsed.getMonth(), birthdayDateParsed.getDate());
       if (now > nextBirthday) {
@@ -544,11 +569,17 @@
         currentAge--;
       }
 
-      document.getElementById('previewDaysSinceStart').textContent = `付き合ってから ${daysSinceStart} 日目です。`;
+      document.getElementById('previewDaysSinceStart').textContent = coupleDate ? `付き合ってから ${daysSinceStart} 日目です。` : '-';
       document.getElementById('previewDaysUntilBirthday').textContent = `誕生日まであと ${daysUntilBirthday} 日です。`;
       document.getElementById('previewCurrentAge').textContent = `現在 ${currentAge} 歳です。`;
       document.getElementById('previewSchoolGrade').textContent = `今年で:${currentAge + 1}`;
-      document.getElementById('previewIntimacyPoints').textContent = `親密度: ${intimacyPoints.toLocaleString()} ポイント`;
+    }
+
+    function calculateIntimacyPoints(startDate) {
+      const now = new Date();
+      const startDateParsed = new Date(startDate);
+      const daysSince = Math.floor((now - startDateParsed) / (1000 * 60 * 60 * 24));
+      return daysSince * 260; // 一日260ポイント
     }
 
     function updatePreview() {
@@ -558,7 +589,6 @@
       document.getElementById('previewDaysUntilBirthday').textContent = document.getElementById('previewDaysUntilBirthday').textContent;
       document.getElementById('previewCurrentAge').textContent = document.getElementById('previewCurrentAge').textContent;
       document.getElementById('previewSchoolGrade').textContent = document.getElementById('previewSchoolGrade').textContent;
-      document.getElementById('previewIntimacyPoints').textContent = document.getElementById('previewIntimacyPoints').textContent;
 
       // 大切な日のプレビューを更新
       const preview = document.getElementById('importantDatesPreview');
@@ -569,7 +599,7 @@
         const dateObj = new Date(date.date);
         const now = new Date();
         const daysSince = Math.floor((now - dateObj) / (1000 * 60 * 60 * 24));
-        const intimacyPoints = daysSince * 260;
+        const intimacyPoints = calculateIntimacyPoints(date.date);
         
         const div = document.createElement('div');
         div.className = 'preview-item';
@@ -720,7 +750,25 @@
     }
 
     function renderProfiles() {
-      // ... existing code ...
+      const container = document.getElementById('profileButtons');
+      container.innerHTML = '';
+      profiles.forEach(p => {
+        const button = document.createElement('button');
+        button.className = 'profile-button';
+        if (p.id === currentProfileId) {
+          button.classList.add('active');
+        }
+        button.textContent = p.name;
+        button.onclick = () => switchProfile(p.id);
+        container.appendChild(button);
+      });
+    }
+
+    function switchProfile(id) {
+      currentProfileId = id;
+      localStorage.setItem('currentProfileId', currentProfileId);
+      renderProfiles();
+      loadProfileData();
     }
 
     function loadProfileData() {
@@ -815,13 +863,6 @@
       loadProfileData();
     }
 
-    function switchProfile() {
-      const select = document.getElementById('profileSelect');
-      currentProfileId = select.value;
-      localStorage.setItem('currentProfileId', currentProfileId);
-      loadProfileData();
-    }
-
     function updateProfileTitle() {
       const profile = profiles.find(p => p.id === currentProfileId);
       if (!profile) return;
@@ -830,6 +871,17 @@
       profile.title = newTitle;
       localStorage.setItem('profiles', JSON.stringify(profiles));
       document.title = newTitle;
+    }
+
+    function deleteCoupleDate() {
+      const profile = profiles.find(p => p.id === currentProfileId);
+      if (profile) {
+        profile.coupleDate = '';
+        coupleDate = '';
+        localStorage.setItem('profiles', JSON.stringify(profiles));
+        calculateDays();
+        updatePreview();
+      }
     }
 
     window.onload = function () {
