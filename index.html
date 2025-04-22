@@ -386,8 +386,8 @@
   </div>
 
   <script>
-    let coupleDate = localStorage.getItem('coupleDate') || '';
-    let birthdayDate = localStorage.getItem('birthdayDate') || '';
+    let coupleDate = localStorage.getItem('coupleDate2') || '';
+    let birthdayDate = localStorage.getItem('birthdayDate2') || '';
     let dangerZones = JSON.parse(localStorage.getItem('dangerZones') || '[]');
     let currentView = localStorage.getItem('currentView') || 'dates';
     let map;
@@ -494,8 +494,8 @@
       birthdayDate = document.getElementById('birthdayDate').value;
 
       if (coupleDate && birthdayDate) {
-        localStorage.setItem('coupleDate', coupleDate);
-        localStorage.setItem('birthdayDate', birthdayDate);
+        localStorage.setItem('coupleDate2', coupleDate);
+        localStorage.setItem('birthdayDate2', birthdayDate);
         calculateDays();
         updatePreview();
         closeSettings();
