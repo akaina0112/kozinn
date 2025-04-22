@@ -319,6 +319,8 @@
           <input type="date" id="birthdayDate">
           <label for="birthdayDate">出会った日</label>
           <input type="date" id="birthdayDate2">
+          <label for="birthdayDate">親密</label>
+          <input type="date" id="birthdayDate3">
           <button onclick="saveDates()">設定を保存</button>
         </div>
       </div>
@@ -395,6 +397,7 @@
     let coupleDate = localStorage.getItem('coupleDate2') || '';
     let birthdayDate = localStorage.getItem('birthdayDate2') || '';
     let birthdayDate2 = localStorage.getItem('birthdayDate3') || '';
+    let birthdayDate3 = localStorage.getItem('birthdayDate4') || '';
     let dangerZones = JSON.parse(localStorage.getItem('dangerZones') || '[]');
     let currentView = localStorage.getItem('currentView') || 'dates';
     let map;
@@ -488,6 +491,7 @@
     document.getElementById('coupleDate').value = coupleDate;
     document.getElementById('birthdayDate').value = birthdayDate;
     document.getElementById('birthdayDate2').value = birthdayDate2;
+    document.getElementById('birthdayDate3').value = birthdayDate3;
 
     function openSettings() {
       document.getElementById('settingsScreen').style.display = 'block';
@@ -501,11 +505,13 @@
       coupleDate = document.getElementById('coupleDate').value;
       birthdayDate = document.getElementById('birthdayDate').value;
       birthdayDate2 = document.getElementById('birthdayDate2').value;
+      birthdayDate3 = document.getElementById('birthdayDate3').value;
 
       if (coupleDate && birthdayDate && birthdayDate2) {
         localStorage.setItem('coupleDate2', coupleDate);
         localStorage.setItem('birthdayDate2', birthdayDate);
         localStorage.setItem('birthdayDate3', birthdayDate2);
+        localStorage.setItem('birthdayDate4', birthdayDate3);
         calculateDays();
         updatePreview();
         closeSettings();
@@ -519,6 +525,7 @@
       const coupleDateParsed = new Date(coupleDate);
       const birthdayDateParsed = new Date(birthdayDate);
       const birthdayDateParsed2 = new Date(birthdayDate2);
+      const birthdayDateParsed3 = new Date(birthdayDate3);
 
       const daysSinceStart = Math.floor((now - coupleDateParsed) / (1000 * 60 * 60 * 24));
       const daysSinceStart2 = Math.floor((now -  birthdayDateParsed2) / (1000 * 60 * 60 * 24));
@@ -540,7 +547,7 @@
       document.getElementById('previewDaysUntilBirthday').textContent = `${daysUntilBirthday} 日です。`;
       document.getElementById('previewCurrentAge').textContent = `${currentAge} 歳です。`;
       document.getElementById('previewSchoolGrade').textContent = `${currentAge + 1} 歳です。`;
-      document.getElementById('previewSchoolGrade2').textContent = `${daysSinceStart2 * 260}`;
+      document.getElementById('previewSchoolGrade2').textContent = `${daysSinceStart3 * 260}(${daysSinceStart2 * 260})`;
     }
 
     function updatePreview() {
