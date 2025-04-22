@@ -529,6 +529,7 @@
 
       const daysSinceStart = Math.floor((now - coupleDateParsed) / (1000 * 60 * 60 * 24));
       const daysSinceStart2 = Math.floor((now -  birthdayDateParsed2) / (1000 * 60 * 60 * 24));
+      const daysSinceStart3 = Math.floor((now -  birthdayDateParsed3) / (1000 * 60 * 60 * 24));
 
       const nextBirthday = new Date(now.getFullYear(), birthdayDateParsed.getMonth(), birthdayDateParsed.getDate());
       if (now > nextBirthday) {
