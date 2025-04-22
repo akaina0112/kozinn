@@ -319,6 +319,14 @@
           <input type="date" id="birthdayDate">
           <button onclick="saveDates()">設定を保存</button>
         </div>
+        <div class="calendar-container" style="margin-top: 20px;">
+          <h3>大切な日を追加</h3>
+          <div id="calendar"></div>
+          <div id="dateForm" style="display: none; margin-top: 10px;">
+            <input type="text" id="dateName" placeholder="大切な日の名前">
+            <button onclick="saveNewDate()">追加</button>
+          </div>
+        </div>
       </div>
 
       <div id="dangerZonesTab" class="settings-tab-content">
@@ -326,6 +334,12 @@
           <button onclick="addDangerZonePrompt()">危険区域を追加</button>
           <div id="dangerZoneList" class="danger-zone-list"></div>
         </div>
+      </div>
+
+      <div class="profile-container" style="margin-bottom: 10px;">
+        <select id="profileSelect" onchange="switchProfile()"></select>
+        <button onclick="addProfile()" style="margin-left: 10px;">新規プロフィール</button>
+        <button onclick="updateProfileTitle()" style="margin-left: 10px;">タイトル変更</button>
       </div>
     </div>
   </div>
@@ -347,10 +361,35 @@
   <div id="datesView" class="view-content active">
     <div class="preview-container">
       <h2>プレビュー</h2>
-      <div id="importantDatesList">
-        <!-- 大切な日がここに動的に追加されます -->
+      <div class="preview-item">
+        <span class="preview-label">付き合い始めた日:</span>
+        <span class="preview-value" id="previewCoupleDate">未設定</span>
       </div>
-      <button onclick="addNewImportantDate()" style="margin-top: 10px;">新しい大切な日を追加</button>
+      <div class="preview-item">
+        <span class="preview-label">誕生日:</span>
+        <span class="preview-value" id="previewBirthdayDate">未設定</span>
+      </div>
+      <div class="preview-item">
+        <span class="preview-label">経過日数:</span>
+        <span class="preview-value" id="previewDaysSinceStart">-</span>
+      </div>
+      <div class="preview-item">
+        <span class="preview-label">誕生日までの日数:</span>
+        <span class="preview-value" id="previewDaysUntilBirthday">-</span>
+      </div>
+      <div class="preview-item">
+        <span class="preview-label">現在の年齢:</span>
+        <span class="preview-value" id="previewCurrentAge">-</span>
+      </div>
+      <div class="preview-item">
+        <span class="preview-label">今年で年齢:</span>
+        <span class="preview-value" id="previewSchoolGrade">-</span>
+      </div>
+      <div class="preview-item">
+        <span class="preview-label">親密度:</span>
+        <span class="preview-value" id="previewIntimacyPoints">-</span>
+      </div>
+      <div id="importantDatesPreview"></div>
     </div>
   </div>
 
@@ -369,6 +408,9 @@
     let map;
     let watchId = null;
     let notificationPermission = false;
+    let profiles = JSON.parse(localStorage.getItem('profiles') || '[]');
+    let currentProfileId = localStorage.getItem('currentProfileId');
+    let selectedDate = null;
     let importantDates = JSON.parse(localStorage.getItem('importantDates') || '[]');
 
     // 通知の許可をリクエスト
@@ -487,6 +529,7 @@
       const birthdayDateParsed = new Date(birthdayDate);
 
       const daysSinceStart = Math.floor((now - coupleDateParsed) / (1000 * 60 * 60 * 24));
+      const intimacyPoints = daysSinceStart * 260; // 一日260ポイント
 
       const nextBirthday = new Date(now.getFullYear(), birthdayDateParsed.getMonth(), birthdayDateParsed.getDate());
       if (now > nextBirthday) {
@@ -505,6 +548,7 @@
       document.getElementById('previewDaysUntilBirthday').textContent = `誕生日まであと ${daysUntilBirthday} 日です。`;
       document.getElementById('previewCurrentAge').textContent = `現在 ${currentAge} 歳です。`;
       document.getElementById('previewSchoolGrade').textContent = `今年で:${currentAge + 1}`;
+      document.getElementById('previewIntimacyPoints').textContent = `親密度: ${intimacyPoints.toLocaleString()} ポイント`;
     }
 
     function updatePreview() {
@@ -514,6 +558,45 @@
       document.getElementById('previewDaysUntilBirthday').textContent = document.getElementById('previewDaysUntilBirthday').textContent;
       document.getElementById('previewCurrentAge').textContent = document.getElementById('previewCurrentAge').textContent;
       document.getElementById('previewSchoolGrade').textContent = document.getElementById('previewSchoolGrade').textContent;
+      document.getElementById('previewIntimacyPoints').textContent = document.getElementById('previewIntimacyPoints').textContent;
+
+      // 大切な日のプレビューを更新
+      const preview = document.getElementById('importantDatesPreview');
+      preview.innerHTML = '';
+      
+      const profileDates = importantDates.filter(d => d.profileId === currentProfileId);
+      profileDates.forEach(date => {
+        const dateObj = new Date(date.date);
+        const now = new Date();
+        const daysSince = Math.floor((now - dateObj) / (1000 * 60 * 60 * 24));
+        const intimacyPoints = daysSince * 260;
+        
+        const div = document.createElement('div');
+        div.className = 'preview-item';
+        div.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span class="preview-label">${date.name}:</span>
+              <span class="preview-value">${date.date}</span>
+              <br>
+              <span class="preview-label">経過日数:</span>
+              <span class="preview-value">${daysSince} 日</span>
+              <br>
+              <span class="preview-label">親密度:</span>
+              <span class="preview-value">${intimacyPoints.toLocaleString()} ポイント</span>
+            </div>
+            <button onclick="removeImportantDate('${date.id}')" style="background-color: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">削除</button>
+          </div>
+        `;
+        preview.appendChild(div);
+      });
+    }
+
+    function removeImportantDate(id) {
+      importantDates = importantDates.filter(d => d.id !== id);
+      localStorage.setItem('importantDates', JSON.stringify(importantDates));
+      renderCalendar();
+      updatePreview();
     }
 
     function addDangerZonePrompt() {
@@ -636,75 +719,126 @@
       localStorage.setItem('currentView', view);
     }
 
-    // 大切な日を追加する関数
-    function addNewImportantDate() {
-      const dateName = prompt('大切な日の名前を入力してください（例：記念日、誕生日など）');
-      if (!dateName) return;
+    function renderProfiles() {
+      // ... existing code ...
+    }
 
-      const dateValue = prompt('日付を入力してください（YYYY-MM-DD形式）');
-      if (!dateValue) return;
+    function loadProfileData() {
+      const profile = profiles.find(p => p.id === currentProfileId);
+      if (!profile) return;
+      coupleDate = profile.coupleDate;
+      birthdayDate = profile.birthdayDate;
+      document.title = profile.title || '大切な日 - 衛星マップ対応';
+      document.getElementById('coupleDate').value = coupleDate;
+      document.getElementById('birthdayDate').value = birthdayDate;
+      calculateDays();
+      updatePreview();
+    }
+
+    function renderCalendar() {
+      const calendar = document.getElementById('calendar');
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      
+      let html = '<table style="width: 100%; border-collapse: collapse;">';
+      html += '<tr><th>日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th></tr>';
+      
+      let day = 1;
+      let startingDay = firstDay.getDay();
+      
+      for (let i = 0; i < 6; i++) {
+        html += '<tr>';
+        for (let j = 0; j < 7; j++) {
+          if (i === 0 && j < startingDay) {
+            html += '<td></td>';
+          } else if (day > lastDay.getDate()) {
+            html += '<td></td>';
+          } else {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const hasEvent = importantDates.some(d => d.date === dateStr);
+            html += `<td onclick="selectDate('${dateStr}')" style="border: 1px solid #ddd; padding: 5px; text-align: center; cursor: pointer; ${hasEvent ? 'background-color: #ffeb3b;' : ''}">${day}</td>`;
+            day++;
+          }
+        }
+        html += '</tr>';
+      }
+      html += '</table>';
+      calendar.innerHTML = html;
+    }
+
+    function selectDate(date) {
+      selectedDate = date;
+      document.getElementById('dateForm').style.display = 'block';
+    }
+
+    function saveNewDate() {
+      const name = document.getElementById('dateName').value;
+      if (!name || !selectedDate) return;
 
       const newDate = {
-        id: Date.now(),
-        name: dateName,
-        date: dateValue
+        id: Date.now().toString(),
+        name: name,
+        date: selectedDate,
+        profileId: currentProfileId
       };
 
       importantDates.push(newDate);
       localStorage.setItem('importantDates', JSON.stringify(importantDates));
-      updateImportantDatesList();
+      
+      document.getElementById('dateName').value = '';
+      document.getElementById('dateForm').style.display = 'none';
+      renderCalendar();
+      updatePreview();
     }
 
-    // 大切な日を削除する関数
-    function removeImportantDate(id) {
-      importantDates = importantDates.filter(date => date.id !== id);
-      localStorage.setItem('importantDates', JSON.stringify(importantDates));
-      updateImportantDatesList();
+    function addProfile() {
+      const name = prompt('新しいプロフィール名を入力してください');
+      if (!name) return;
+      const title = prompt('このプロフィールのタイトルを入力してください');
+      if (!title) return;
+      const newProfile = { 
+        id: Date.now().toString(), 
+        name: name, 
+        title: title,
+        coupleDate: '', 
+        birthdayDate: '' 
+      };
+      profiles.push(newProfile);
+      localStorage.setItem('profiles', JSON.stringify(profiles));
+      currentProfileId = newProfile.id;
+      localStorage.setItem('currentProfileId', currentProfileId);
+      renderProfiles();
+      loadProfileData();
     }
 
-    // 大切な日のリストを更新する関数
-    function updateImportantDatesList() {
-      const list = document.getElementById('importantDatesList');
-      list.innerHTML = '';
+    function switchProfile() {
+      const select = document.getElementById('profileSelect');
+      currentProfileId = select.value;
+      localStorage.setItem('currentProfileId', currentProfileId);
+      loadProfileData();
+    }
 
-      importantDates.forEach(date => {
-        const div = document.createElement('div');
-        div.className = 'preview-item';
-        
-        const now = new Date();
-        const dateObj = new Date(date.date);
-        const daysSince = Math.floor((now - dateObj) / (1000 * 60 * 60 * 24));
-        const intimacyPoints = daysSince * 260; // 一日260ポイント
-        
-        div.innerHTML = `
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <div>
-              <span class="preview-label">${date.name}:</span>
-              <span class="preview-value">${date.date}</span>
-            </div>
-            <button onclick="removeImportantDate(${date.id})" style="background-color: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">削除</button>
-          </div>
-          <div style="background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-left: 10px;">
-            <div>
-              <span class="preview-label">経過日数:</span>
-              <span class="preview-value">${daysSince} 日</span>
-            </div>
-            <div>
-              <span class="preview-label">親密度:</span>
-              <span class="preview-value">${intimacyPoints.toLocaleString()} ポイント</span>
-            </div>
-          </div>
-        `;
-        
-        list.appendChild(div);
-      });
+    function updateProfileTitle() {
+      const profile = profiles.find(p => p.id === currentProfileId);
+      if (!profile) return;
+      const newTitle = prompt('新しいタイトルを入力してください', profile.title);
+      if (!newTitle) return;
+      profile.title = newTitle;
+      localStorage.setItem('profiles', JSON.stringify(profiles));
+      document.title = newTitle;
     }
 
     window.onload = function () {
+      renderProfiles();
+      loadProfileData();
       requestNotificationPermission();
       startLocationWatch();
       displayDangerZones();
-      updateImportantDatesList();
+      renderCalendar();
       if (coupleDate && birthdayDate) {
         calculateDays();
       }
