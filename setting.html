@@ -184,12 +184,22 @@
 
       // レート制限をチェック
       if (!checkRateLimit()) {
+        console.log('Rate limit exceeded:', {
+          currentRequests: rateLimit.requests.length,
+          maxRequests: rateLimit.maxRequests,
+          timeWindow: rateLimit.timeWindow
+        });
         addMessage("ごめんね、ちょっと待ってね！たくさん話しかけられすぎて疲れちゃったの…", false);
         return;
       }
 
       try {
         recordRequest();
+        console.log('Sending API request:', {
+          userText,
+          timestamp: new Date().toISOString()
+        });
+
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -214,22 +224,40 @@
         });
 
         if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('API Error:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData,
+            timestamp: new Date().toISOString()
+          });
+
           if (response.status === 429) {
             addMessage("ごめんね、ちょっと待ってね！たくさん話しかけられすぎて疲れちゃったの…", false);
             return;
           }
-          throw new Error(`API error: ${response.status}`);
+          throw new Error(`API error: ${response.status} - ${response.statusText}`);
         }
 
         const data = await response.json();
+        console.log('API Response:', {
+          data,
+          timestamp: new Date().toISOString()
+        });
+
         if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+          console.error('Invalid API response format:', data);
           throw new Error('Invalid API response format');
         }
 
         const reply = data.choices[0].message.content;
         addMessage(reply, false);
       } catch (e) {
-        console.error('Error:', e);
+        console.error('Error details:', {
+          message: e.message,
+          stack: e.stack,
+          timestamp: new Date().toISOString()
+        });
         addMessage("うわ〜ん…狼しゃべれなくなっちゃった…！ごめんねっ", false);
         if (errorVoice) {
           errorVoice.play().catch(err => console.error('Audio error:', err));
