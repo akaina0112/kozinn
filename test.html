@@ -711,42 +711,34 @@
 
     function updateDangerZoneDistances() {
       const distanceList = document.getElementById('dangerZoneDistanceList');
+      distanceList.innerHTML = ''; // リストをクリア
       
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(position => {
           const currentLat = position.coords.latitude;
           const currentLng = position.coords.longitude;
 
-          // 既存の要素を更新
-          const existingItems = distanceList.querySelectorAll('.danger-zone-distance-item');
-          dangerZones.forEach((zone, index) => {
+          dangerZones.forEach(zone => {
             const distance = calculateDistance(currentLat, currentLng, zone.lat, zone.lng);
             const roundedDistance = Math.round(distance);
             
-            if (existingItems[index]) {
-              // 既存の要素を更新
-              const distanceValue = existingItems[index].querySelector('.distance-value');
-              if (distanceValue) {
-                distanceValue.classList.add('distance-updating');
-                setTimeout(() => {
-                  distanceValue.textContent = `${roundedDistance}m`;
-                  distanceValue.classList.remove('distance-updating');
-                }, 150);
-              }
-            } else {
-              // 新しい要素を追加
-              const div = document.createElement('div');
-              div.className = 'danger-zone-distance-item';
-              div.innerHTML = `危険区域まで <span class="distance-value">${roundedDistance}m</span>`;
-              distanceList.appendChild(div);
-            }
+            const div = document.createElement('div');
+            div.className = 'danger-zone-distance-item';
+            div.innerHTML = `危険区域まで <span class="distance-value">${roundedDistance}m</span>`;
+            distanceList.appendChild(div);
           });
-
-          // 余分な要素を削除
-          while (existingItems.length > dangerZones.length) {
-            distanceList.removeChild(existingItems[existingItems.length - 1]);
-          }
+        }, error => {
+          console.error('位置情報の取得に失敗しました:', error);
+          const div = document.createElement('div');
+          div.className = 'danger-zone-distance-item';
+          div.innerHTML = '位置情報の取得に失敗しました';
+          distanceList.appendChild(div);
         });
+      } else {
+        const div = document.createElement('div');
+        div.className = 'danger-zone-distance-item';
+        div.innerHTML = '位置情報が利用できません';
+        distanceList.appendChild(div);
       }
     }
 
