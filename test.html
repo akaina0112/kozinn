@@ -591,12 +591,21 @@
         currentAge--;
       }
 
-      document.getElementById('previewDaysSinceStart').textContent = coupleDate ? ` ${daysSinceStart} 日目です。` : '-';
-      document.getElementById('previewDaysSinceMeeting').textContent = meetingDate ? ` ${daysSinceMeeting} 日目です。` : '-';
-      document.getElementById('previewDaysUntilBirthday').textContent = ` ${daysUntilBirthday} 日です。`;
-      document.getElementById('previewCurrentAge').textContent = ` ${currentAge} 歳`;
-      document.getElementById('previewSchoolGrade').textContent = `${currentAge + 1}　歳`;
-      document.getElementById('previewIntimacyPoints').textContent = `${(daysSinceMeeting * 260).toLocaleString()}`;
+      if (document.getElementById('previewDaysSinceMeeting')) {
+        document.getElementById('previewDaysSinceMeeting').textContent = meetingDate ? ` ${daysSinceMeeting} 日目です。` : '-';
+      }
+      if (document.getElementById('previewDaysUntilBirthday')) {
+        document.getElementById('previewDaysUntilBirthday').textContent = ` ${daysUntilBirthday} 日です。`;
+      }
+      if (document.getElementById('previewCurrentAge')) {
+        document.getElementById('previewCurrentAge').textContent = ` ${currentAge} 歳`;
+      }
+      if (document.getElementById('previewSchoolGrade')) {
+        document.getElementById('previewSchoolGrade').textContent = `${currentAge + 1}　歳`;
+      }
+      if (document.getElementById('previewIntimacyPoints')) {
+        document.getElementById('previewIntimacyPoints').textContent = `${(daysSinceMeeting * 260).toLocaleString()}`;
+      }
     }
 
     function calculateIntimacyPoints(startDate) {
@@ -791,7 +800,9 @@
 
     function openMap() {
       document.getElementById('mapContainer').style.display = 'block';
-      map.invalidateSize();
+      if (map) {
+        map.invalidateSize();
+      }
     }
 
     function closeMap() {
