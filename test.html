@@ -237,24 +237,53 @@
       if (meetingDate) {
         const meetingDateParsed = new Date(meetingDate);
         const daysSinceMeeting = Math.floor((now - meetingDateParsed) / (1000 * 60 * 60 * 24));
-        document.getElementById('previewDaysSinceMeeting').textContent = `\n${daysSinceMeeting} 日目で\n${daysSinceMeeting * 260}です。`;
+        document.getElementById('previewDaysSinceMeeting').textContent = `\n${daysSinceMeeting} 日目で\n${daysSinceMeeting * 260} です。`;
       } else if (daysSinceMeeting) {
-        document.getElementById('previewDaysSinceMeeting').textContent = `\n\n${daysSinceMeeting} 日目で\n${daysSinceMeeting * 260}です。`;
+        const calculatedDate = new Date(now);
+        calculatedDate.setDate(now.getDate() - parseInt(daysSinceMeeting));
+        const formattedDate = calculatedDate.toISOString().split('T')[0];
+        document.getElementById('meetingDate').value = formattedDate;
+        document.getElementById('previewDaysSinceMeeting').textContent = `\n\n${daysSinceMeeting} 日目で\n${daysSinceMeeting * 260} です。`;
       }
 
       // 親密関係からの親密度表示計算
       if (anniversaryDate) {
         const anniversaryDateParsed = new Date(anniversaryDate);
         const daysSinceAnniversary = Math.floor((now - anniversaryDateParsed) / (1000 * 60 * 60 * 24));
-        document.getElementById('previewDaysSinceAnniversary').textContent = `${daysSinceAnniversary} で${daysSinceAnniversary * 260}です。`;
+        document.getElementById('previewDaysSinceAnniversary').textContent = `${daysSinceAnniversary} 日目で ${daysSinceAnniversary * 260} です。`;
       } else if (daysSinceAnniversary) {
-        document.getElementById('previewDaysSinceAnniversary').textContent = `${daysSinceAnniversary} で${daysSinceAnniversary * 260}です。`;
+        const calculatedDate = new Date(now);
+        calculatedDate.setDate(now.getDate() - parseInt(daysSinceAnniversary));
+        const formattedDate = calculatedDate.toISOString().split('T')[0];
+        document.getElementById('anniversaryDate').value = formattedDate;
+        document.getElementById('previewDaysSinceAnniversary').textContent = `${daysSinceAnniversary} 日目で ${daysSinceAnniversary * 260} です。`;
       }
     }
 
     function updatePreview() {
-      document.getElementById('previewMeetingDate').textContent = meetingDate || '未設定';
-      document.getElementById('previewAnniversaryDate').textContent = anniversaryDate || '未設定';
+      const now = new Date();
+      
+      if (meetingDate) {
+        document.getElementById('previewMeetingDate').textContent = meetingDate;
+      } else if (daysSinceMeeting) {
+        const calculatedDate = new Date(now);
+        calculatedDate.setDate(now.getDate() - parseInt(daysSinceMeeting));
+        const formattedDate = calculatedDate.toISOString().split('T')[0];
+        document.getElementById('previewMeetingDate').textContent = formattedDate;
+      } else {
+        document.getElementById('previewMeetingDate').textContent = '未設定';
+      }
+
+      if (anniversaryDate) {
+        document.getElementById('previewAnniversaryDate').textContent = anniversaryDate;
+      } else if (daysSinceAnniversary) {
+        const calculatedDate = new Date(now);
+        calculatedDate.setDate(now.getDate() - parseInt(daysSinceAnniversary));
+        const formattedDate = calculatedDate.toISOString().split('T')[0];
+        document.getElementById('previewAnniversaryDate').textContent = formattedDate;
+      } else {
+        document.getElementById('previewAnniversaryDate').textContent = '未設定';
+      }
     }
 
     window.onload = function () {
