@@ -524,11 +524,11 @@
         currentAge--;
       }
 
-      document.getElementById('previewDaysSinceStart').textContent = `付き合ってから ${daysSinceStart} 日目です。`;
-      document.getElementById('previewDaysUntilBirthday').textContent = `誕生日まであと ${daysUntilBirthday} 日です。`;
-      document.getElementById('previewCurrentAge').textContent = `現在 ${currentAge} 歳です。`;
-      document.getElementById('previewSchoolGrade').textContent = `今年で:${currentAge + 1}`;
-      document.getElementById('previewSchoolGrade2').textContent = `今年で:${currentAge * 260}`;
+      document.getElementById('previewDaysSinceStart').textContent = `${daysSinceStart} 日目です。`;
+      document.getElementById('previewDaysUntilBirthday').textContent = `${daysUntilBirthday} 日です。`;
+      document.getElementById('previewCurrentAge').textContent = `${currentAge} 歳です。`;
+      document.getElementById('previewSchoolGrade').textContent = `${currentAge + 1} 歳です。`;
+      document.getElementById('previewSchoolGrade2').textContent = `${currentAge * 260}`;
     }
 
     function updatePreview() {
