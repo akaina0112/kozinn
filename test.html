@@ -291,7 +291,7 @@
       if (anniversaryDate) {
         const anniversaryDateParsed = new Date(anniversaryDate);
         const daysSinceAnniversary = Math.floor((now - anniversaryDateParsed) / (1000 * 60 * 60 * 24));
-        document.getElementById('previewDaysSinceAnniversary').innerHTML = `$<br>{daysSinceAnniversary} 日目<br>MAX親密度は ${daysSinceAnniversary * 260} です。`;
+        document.getElementById('previewDaysSinceAnniversary').innerHTML = `<br>${daysSinceAnniversary} 日目<br>MAX親密度は ${daysSinceAnniversary * 260} です。`;
       } else if (daysSinceAnniversary) {
         const calculatedDate = new Date(now);
         calculatedDate.setDate(now.getDate() - parseInt(daysSinceAnniversary));
