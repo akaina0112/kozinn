@@ -1,0 +1,16 @@
+{
+  "name": "大切な日アプリ",
+  "short_name": "大切な日",
+  "description": "大切な日を記録するアプリ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f4f4",
+  "theme_color": "#4CAF50",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+} 
