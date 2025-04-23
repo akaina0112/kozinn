@@ -276,7 +276,7 @@
       if (meetingDate) {
         const meetingDateParsed = new Date(meetingDate);
         const daysSinceMeeting = Math.floor((now - meetingDateParsed) / (1000 * 60 * 60 * 24));
-        document.getElementById('previewDaysSinceMeeting').innerHTML = `<br>${daysSinceMeeting} 日目<br>親密度は ${daysSinceMeeting * 260} です。`;
+        document.getElementById('previewDaysSinceMeeting').innerHTML = `<br>${daysSinceMeeting} 日目<br>MAX親密度は ${daysSinceMeeting * 260} です。`;
       } else if (daysSinceMeeting) {
         const calculatedDate = new Date(now);
         calculatedDate.setDate(now.getDate() - parseInt(daysSinceMeeting));
@@ -284,14 +284,14 @@
         const dateInput = document.getElementById('meetingDate');
         dateInput.value = formattedDate;
         dateInput.disabled = false;
-        document.getElementById('previewDaysSinceMeeting').innerHTML = `<br>${daysSinceMeeting} 日目<br>親密度は ${daysSinceMeeting * 260} です。`;
+        document.getElementById('previewDaysSinceMeeting').innerHTML = `<br>${daysSinceMeeting} 日目<br>MAX親密度は ${daysSinceMeeting * 260} です。`;
       }
 
       // 親密関係からの親密度表示計算
       if (anniversaryDate) {
         const anniversaryDateParsed = new Date(anniversaryDate);
         const daysSinceAnniversary = Math.floor((now - anniversaryDateParsed) / (1000 * 60 * 60 * 24));
-        document.getElementById('previewDaysSinceAnniversary').innerHTML = `$<br>{daysSinceAnniversary} 日目<br>親密度は ${daysSinceAnniversary * 260} です。`;
+        document.getElementById('previewDaysSinceAnniversary').innerHTML = `$<br>{daysSinceAnniversary} 日目<br>MAX親密度は ${daysSinceAnniversary * 260} です。`;
       } else if (daysSinceAnniversary) {
         const calculatedDate = new Date(now);
         calculatedDate.setDate(now.getDate() - parseInt(daysSinceAnniversary));
@@ -299,7 +299,7 @@
         const dateInput = document.getElementById('anniversaryDate');
         dateInput.value = formattedDate;
         dateInput.disabled = false;
-        document.getElementById('previewDaysSinceAnniversary').innerHTML = `<br>${daysSinceAnniversary} 日目<br>親密度は ${daysSinceAnniversary * 260} です。`;
+        document.getElementById('previewDaysSinceAnniversary').innerHTML = `<br>${daysSinceAnniversary} 日目<br>MAX親密度は ${daysSinceAnniversary * 260} です。`;
       }
     }
 
