@@ -103,6 +103,14 @@
 
   <div class="form-container">
     <div class="date-section">
+      <h3>名前</h3>
+      <div class="input-method">
+        <label for="partnerName">パートナー名</label>
+        <input type="text" id="partnerName" placeholder="名前を入力">
+      </div>
+    </div>
+
+    <div class="date-section">
       <h3>出会った日</h3>
       <div class="input-method">
         <label>
@@ -164,6 +172,10 @@
   <div class="preview-container">
     <h2>プレビュー</h2>
     <div class="preview-item">
+      <span class="preview-label">パートナー名:</span>
+      <span class="preview-value" id="previewPartnerName">未設定</span>
+    </div>
+    <div class="preview-item">
       <span class="preview-label">出会った日:</span>
       <span class="preview-value" id="previewMeetingDate">未設定</span>
     </div>
@@ -191,6 +203,7 @@
     let anniversaryDate = localStorage.getItem('app_anniversary_date_v1') || '';
     let daysSinceAnniversary = localStorage.getItem('app_days_since_anniversary_v1') || '';
     let intimacyLevel = localStorage.getItem('app_intimacy_level_v1') || '';
+    let partnerName = localStorage.getItem('app_partner_name_v1') || '';
 
     function toggleInputMethod(section) {
       const dateInput = document.getElementById(`dateInput${section}`);
@@ -208,6 +221,12 @@
     }
 
     function saveDates() {
+      // 名前の保存
+      partnerName = document.getElementById('partnerName').value;
+      if (partnerName) {
+        localStorage.setItem('app_partner_name_v1', partnerName);
+      }
+
       // 出会った日からの親密度表示保存
       const method1 = document.querySelector('input[name="inputMethod1"]:checked').value;
       if (method1 === 'date') {
@@ -287,6 +306,13 @@
     function updatePreview() {
       const now = new Date();
       
+      // 名前の表示
+      if (partnerName) {
+        document.getElementById('previewPartnerName').textContent = partnerName;
+      } else {
+        document.getElementById('previewPartnerName').textContent = '未設定';
+      }
+
       if (meetingDate) {
         document.getElementById('previewMeetingDate').textContent = meetingDate;
       } else if (daysSinceMeeting) {
@@ -372,6 +398,11 @@
     }
 
     window.onload = function () {
+      // 名前の設定
+      if (partnerName) {
+        document.getElementById('partnerName').value = partnerName;
+      }
+
       // 出会った日からの親密度表示設定
       if (meetingDate) {
         document.querySelector('input[name="inputMethod1"][value="date"]').checked = true;
