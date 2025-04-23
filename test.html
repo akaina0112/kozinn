@@ -342,6 +342,7 @@
         const anniversaryDifference = parseInt(intimacyLevel) - expectedIntimacy.anniversaryBonus;
 
         let statusText = '';
+        statusText += '<br>';
         if (baseDifference < 0) {
           statusText += `出会った日から[${Math.abs(baseDifference)}]低いです。`;
         } else if (baseDifference > 0) {
