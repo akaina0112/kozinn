@@ -150,6 +150,14 @@
       </div>
     </div>
 
+    <div class="date-section">
+      <h3>親密度</h3>
+      <div class="input-method">
+        <label for="intimacyLevel">現在の親密度</label>
+        <input type="number" id="intimacyLevel" min="0" placeholder="親密度を入力">
+      </div>
+    </div>
+
     <button onclick="saveDates()">設定を保存</button>
   </div>
 
@@ -171,6 +179,10 @@
       <span class="preview-label">記念日からの日数:</span>
       <span class="preview-value" id="previewDaysSinceAnniversary">-</span>
     </div>
+    <div class="preview-item">
+      <span class="preview-label">親密度の状態:</span>
+      <span class="preview-value" id="previewIntimacyStatus">未設定</span>
+    </div>
   </div>
 
   <script>
@@ -178,6 +190,7 @@
     let daysSinceMeeting = localStorage.getItem('app_days_since_meeting_v1') || '';
     let anniversaryDate = localStorage.getItem('app_anniversary_date_v1') || '';
     let daysSinceAnniversary = localStorage.getItem('app_days_since_anniversary_v1') || '';
+    let intimacyLevel = localStorage.getItem('app_intimacy_level_v1') || '';
 
     function toggleInputMethod(section) {
       const dateInput = document.getElementById(`dateInput${section}`);
@@ -227,6 +240,12 @@
         }
       }
 
+      // 親密度の保存
+      intimacyLevel = document.getElementById('intimacyLevel').value;
+      if (intimacyLevel && !isNaN(intimacyLevel) && intimacyLevel >= 0) {
+        localStorage.setItem('app_intimacy_level_v1', intimacyLevel);
+      }
+
       calculateDays();
       updatePreview();
     }
@@ -238,7 +257,7 @@
       if (meetingDate) {
         const meetingDateParsed = new Date(meetingDate);
         const daysSinceMeeting = Math.floor((now - meetingDateParsed) / (1000 * 60 * 60 * 24));
-        document.getElementById('previewDaysSinceMeeting').textContent = `\n${daysSinceMeeting} 日目で\n${daysSinceMeeting * 260} です。`;
+        document.getElementById('previewDaysSinceMeeting').innerHTML = `<br>${daysSinceMeeting} 日目<br>親密度は ${daysSinceMeeting * 260} です。`;
       } else if (daysSinceMeeting) {
         const calculatedDate = new Date(now);
         calculatedDate.setDate(now.getDate() - parseInt(daysSinceMeeting));
@@ -246,14 +265,14 @@
         const dateInput = document.getElementById('meetingDate');
         dateInput.value = formattedDate;
         dateInput.disabled = false;
-        document.getElementById('previewDaysSinceMeeting').textContent = `\n\n${daysSinceMeeting} 日目で\n${daysSinceMeeting * 260} です。`;
+        document.getElementById('previewDaysSinceMeeting').innerHTML = `<br>${daysSinceMeeting} 日目<br>親密度は ${daysSinceMeeting * 260} です。`;
       }
 
       // 親密関係からの親密度表示計算
       if (anniversaryDate) {
         const anniversaryDateParsed = new Date(anniversaryDate);
         const daysSinceAnniversary = Math.floor((now - anniversaryDateParsed) / (1000 * 60 * 60 * 24));
-        document.getElementById('previewDaysSinceAnniversary').textContent = `${daysSinceAnniversary} 日目で ${daysSinceAnniversary * 260} です。`;
+        document.getElementById('previewDaysSinceAnniversary').innerHTML = `$<br>{daysSinceAnniversary} 日目<br>親密度は ${daysSinceAnniversary * 260} です。`;
       } else if (daysSinceAnniversary) {
         const calculatedDate = new Date(now);
         calculatedDate.setDate(now.getDate() - parseInt(daysSinceAnniversary));
@@ -261,7 +280,7 @@
         const dateInput = document.getElementById('anniversaryDate');
         dateInput.value = formattedDate;
         dateInput.disabled = false;
-        document.getElementById('previewDaysSinceAnniversary').textContent = `${daysSinceAnniversary} 日目で ${daysSinceAnniversary * 260} です。`;
+        document.getElementById('previewDaysSinceAnniversary').innerHTML = `<br>${daysSinceAnniversary} 日目<br>親密度は ${daysSinceAnniversary * 260} です。`;
       }
     }
 
@@ -289,6 +308,67 @@
       } else {
         document.getElementById('previewAnniversaryDate').textContent = '未設定';
       }
+
+      // 親密度の状態を表示
+      if (intimacyLevel) {
+        const expectedIntimacy = calculateExpectedIntimacy();
+        const baseDifference = parseInt(intimacyLevel) - expectedIntimacy.baseIntimacy;
+        const anniversaryDifference = parseInt(intimacyLevel) - expectedIntimacy.anniversaryBonus;
+
+        let statusText = '';
+        if (baseDifference < 0) {
+          statusText += `出会った日から[${Math.abs(baseDifference)}]低いです。`;
+        } else if (baseDifference > 0) {
+          statusText += `出会った日から[${baseDifference}]高いです！！素晴らしい`;
+        } else {
+          statusText += '出会った日から順調です！！';
+        }
+
+        statusText += '<br>';
+
+        if (anniversaryDifference < 0) {
+          statusText += `記念日から[${Math.abs(anniversaryDifference)}]低いです。`;
+        } else if (anniversaryDifference > 0) {
+          statusText += `記念日から[${anniversaryDifference}]高いです！！素晴らしい`;
+        } else {
+          statusText += '記念日から順調です！！';
+        }
+       
+
+        document.getElementById('previewIntimacyStatus').innerHTML = statusText;
+      } else {
+        document.getElementById('previewIntimacyStatus').textContent = '未設定';
+      }
+    }
+
+    function calculateExpectedIntimacy() {
+      let baseIntimacy = 0;
+      let anniversaryBonus = 0;
+
+      // 出会った日からの基本親密度計算
+      if (daysSinceMeeting) {
+        baseIntimacy = parseInt(daysSinceMeeting) * 260;
+      } else if (meetingDate) {
+        const now = new Date();
+        const meetingDateParsed = new Date(meetingDate);
+        const days = Math.floor((now - meetingDateParsed) / (1000 * 60 * 60 * 24));
+        baseIntimacy = days * 260;
+      }
+
+      // 記念日からのボーナス計算
+      if (daysSinceAnniversary) {
+        anniversaryBonus = parseInt(daysSinceAnniversary) * 260;
+      } else if (anniversaryDate) {
+        const now = new Date();
+        const anniversaryDateParsed = new Date(anniversaryDate);
+        const days = Math.floor((now - anniversaryDateParsed) / (1000 * 60 * 60 * 24));
+        anniversaryBonus = days * 260;
+      }
+
+      return {
+        baseIntimacy: Math.min(baseIntimacy, 1000000),
+        anniversaryBonus: Math.min(anniversaryBonus, 1000000)
+      };
     }
 
     window.onload = function () {
@@ -308,6 +388,11 @@
       } else if (daysSinceAnniversary) {
         document.querySelector('input[name="inputMethod2"][value="days"]').checked = true;
         document.getElementById('daysSinceAnniversary').value = daysSinceAnniversary;
+      }
+
+      // 親密度の設定
+      if (intimacyLevel) {
+        document.getElementById('intimacyLevel').value = intimacyLevel;
       }
 
       toggleInputMethod(1);
