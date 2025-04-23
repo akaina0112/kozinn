@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FPS Online Game</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden;
+            touch-action: none;
+        }
+        canvas { 
+            display: block; 
+            width: 100%;
+            height: 100%;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-family: Arial, sans-serif;
+            z-index: 100;
+        }
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            pointer-events: none;
+            z-index: 100;
+        }
+        #mobileControls {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            z-index: 100;
+        }
+        #joystick {
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            position: relative;
+        }
+        #joystickKnob {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        #shootButton {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 0, 0, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+        @media (min-width: 768px) {
+            #mobileControls {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="info">FPS: <span id="fps">0</span></div>
+    <div id="crosshair">+</div>
+    <div id="mobileControls">
+        <div id="joystick">
+            <div id="joystickKnob"></div>
+        </div>
+        <div id="shootButton">発射</div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        // 基本的なThree.jsのセットアップ
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // プレイヤーの状態
+        const player = {
+            position: new THREE.Vector3(0, 1, 0),
+            velocity: new THREE.Vector3(),
+            speed: 0.1,
+            health: 100,
+            weapon: {
+                damage: 20,
+                fireRate: 0.5,
+                lastShot: 0
+            }
+        };
+
+        // キー入力の状態
+        const keys = {
+            w: false,
+            s: false,
+            a: false,
+            d: false,
+            space: false
+        };
+
+        // マウス入力の状態
+        let mouseX = 0;
+        let mouseY = 0;
+        let isPointerLocked = false;
+
+        // タッチ入力の状態
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isTouching = false;
+
+        // ジョイスティックの状態
+        const joystick = {
+            active: false,
+            x: 0,
+            y: 0
+        };
+
+        // デバイス検出
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        // プレイヤーの表示設定
+        function createPlayerModel(id, isLocal = false) {
+            const geometry = new THREE.BoxGeometry(1, 2, 1);
+            const material = new THREE.MeshPhongMaterial({ 
+                color: isLocal ? 0x00ff00 : 0xff0000,
+                transparent: true,
+                opacity: 0.8
+            });
+            const playerMesh = new THREE.Mesh(geometry, material);
+            playerMesh.name = `player_${id}`;
+            playerMesh.userData.isPlayer = true;
+            playerMesh.userData.health = 100;
+            scene.add(playerMesh);
+            return playerMesh;
+        }
+
+        // プレイヤーの初期化
+        const localPlayer = createPlayerModel(socket.id, true);
+        
+        // 他のプレイヤーの管理
+        const otherPlayers = new Map();
+
+        // プレイヤーの移動制御
+        function updatePlayerMovement() {
+            const moveSpeed = player.speed;
+            const direction = new THREE.Vector3();
+
+            if (keys.w || joystick.y < -0.5) direction.z -= 1;
+            if (keys.s || joystick.y > 0.5) direction.z += 1;
+            if (keys.a || joystick.x < -0.5) direction.x -= 1;
+            if (keys.d || joystick.x > 0.5) direction.x += 1;
+
+            direction.normalize();
+            direction.multiplyScalar(moveSpeed);
+
+            player.position.add(direction);
+            camera.position.copy(player.position);
+        }
+
+        // 武器システム
+        function shoot() {
+            const now = Date.now();
+            if (now - player.weapon.lastShot < player.weapon.fireRate * 1000) return;
+
+            player.weapon.lastShot = now;
+            
+            // レイキャストで弾の当たり判定
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+
+            const intersects = raycaster.intersectObjects(scene.children);
+            if (intersects.length > 0) {
+                const hit = intersects[0];
+                if (hit.object.userData.isPlayer) {
+                    // プレイヤーにダメージを与える
+                    hit.object.userData.health -= player.weapon.damage;
+                }
+            }
+        }
+
+        // マルチプレイヤー対応
+        const socket = io('http://localhost:3000');
+        
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            // 既存のプレイヤー情報を要求
+            socket.emit('requestPlayers');
+        });
+
+        socket.on('playerList', (players) => {
+            players.forEach(player => {
+                if (player.id !== socket.id) {
+                    const playerMesh = createPlayerModel(player.id);
+                    playerMesh.position.copy(player.position);
+                    otherPlayers.set(player.id, playerMesh);
+                }
+            });
+        });
+
+        socket.on('playerUpdate', (data) => {
+            if (data.id !== socket.id) {
+                const playerMesh = otherPlayers.get(data.id);
+                if (playerMesh) {
+                    playerMesh.position.copy(data.position);
+                    playerMesh.rotation.copy(data.rotation);
+                }
+            }
+        });
+
+        socket.on('playerDisconnected', (id) => {
+            const playerMesh = otherPlayers.get(id);
+            if (playerMesh) {
+                scene.remove(playerMesh);
+                otherPlayers.delete(id);
+            }
+        });
+
+        // タッチコントロールの設定
+        const joystickElement = document.getElementById('joystick');
+        const joystickKnob = document.getElementById('joystickKnob');
+        const shootButton = document.getElementById('shootButton');
+
+        joystickElement.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            joystick.active = true;
+            const touch = e.touches[0];
+            const rect = joystickElement.getBoundingClientRect();
+            touchStartX = touch.clientX - rect.left;
+            touchStartY = touch.clientY - rect.top;
+        });
+
+        joystickElement.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!joystick.active) return;
+            const touch = e.touches[0];
+            const rect = joystickElement.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            
+            const dx = x - touchStartX;
+            const dy = y - touchStartY;
+            
+            joystick.x = Math.max(-1, Math.min(1, dx / 50));
+            joystick.y = Math.max(-1, Math.min(1, dy / 50));
+            
+            joystickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+        });
+
+        joystickElement.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            joystick.active = false;
+            joystick.x = 0;
+            joystick.y = 0;
+            joystickKnob.style.transform = 'translate(-50%, -50%)';
+        });
+
+        shootButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            shoot();
+        });
+
+        // 画面の回転による視点操作
+        document.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1 && !joystick.active) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const movementX = touch.movementX || 0;
+                const movementY = touch.movementY || 0;
+                
+                mouseX += movementX * 0.002;
+                mouseY += movementY * 0.002;
+                mouseY = Math.max(-Math.PI/2, Math.min(Math.PI/2, mouseY));
+                camera.rotation.y = -mouseX;
+                camera.rotation.x = -mouseY;
+            }
+        }, { passive: false });
+
+        // キーボード入力の設定
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() in keys) {
+                keys[e.key.toLowerCase()] = true;
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key.toLowerCase() in keys) {
+                keys[e.key.toLowerCase()] = false;
+            }
+        });
+
+        // マウス入力の設定
+        document.addEventListener('mousemove', (e) => {
+            if (isPointerLocked) {
+                mouseX += e.movementX * 0.002;
+                mouseY += e.movementY * 0.002;
+                mouseY = Math.max(-Math.PI/2, Math.min(Math.PI/2, mouseY));
+                camera.rotation.y = -mouseX;
+                camera.rotation.x = -mouseY;
+            }
+        });
+
+        document.addEventListener('click', () => {
+            if (!isPointerLocked) {
+                renderer.domElement.requestPointerLock();
+            }
+        });
+
+        document.addEventListener('pointerlockchange', () => {
+            isPointerLocked = document.pointerLockElement === renderer.domElement;
+        });
+
+        // デバイスに応じた設定調整
+        if (isMobile) {
+            // モバイル向けの感度調整
+            player.speed = 0.05;
+            camera.fov = 75;
+            camera.updateProjectionMatrix();
+        } else {
+            // PC向けの設定
+            player.speed = 0.1;
+            camera.fov = 60;
+            camera.updateProjectionMatrix();
+        }
+
+        // アニメーションループ
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            updatePlayerMovement();
+            
+            // ローカルプレイヤーの位置を更新
+            localPlayer.position.copy(player.position);
+            localPlayer.rotation.copy(camera.rotation);
+            
+            // サーバーにプレイヤーの位置を送信
+            socket.emit('playerUpdate', {
+                position: player.position,
+                rotation: camera.rotation
+            });
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // ウィンドウリサイズ対応
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
