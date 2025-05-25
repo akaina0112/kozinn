@@ -58,105 +58,140 @@
     <ul id="birthdayList"></ul>
   </div>
 
-  <script>
-    function loadBirthdays() {
-      return JSON.parse(localStorage.getItem('birthdays') || '[]');
+<script>
+  function loadBirthdays() {
+    return JSON.parse(localStorage.getItem('birthdays') || '[]');
+  }
+
+  function saveBirthdays(data) {
+    localStorage.setItem('birthdays', JSON.stringify(data));
+  }
+
+  function addBirthday() {
+    const name = document.getElementById('nameInput').value.trim();
+    const birth = document.getElementById('birthInput').value.trim();
+    if (!name || !/^\d{4}\/\d{2}\/\d{2}$/.test(birth)) {
+      alert("名前と誕生日（YYYY/MM/DD）を正しく入力してください");
+      return;
     }
 
-    function saveBirthdays(data) {
-      localStorage.setItem('birthdays', JSON.stringify(data));
-    }
+    const data = loadBirthdays();
+    data.push({ name, birth });
+    saveBirthdays(data);
+    document.getElementById('nameInput').value = '';
+    document.getElementById('birthInput').value = '';
+    renderBirthdays();
+  }
 
-    function addBirthday() {
-      const name = document.getElementById('nameInput').value.trim();
-      const birth = document.getElementById('birthInput').value.trim();
-      if (!name || !/^\d{4}\/\d{2}\/\d{2}$/.test(birth)) {
-        alert("名前と誕生日（YYYY/MM/DD）を正しく入力してください");
-        return;
+  function calculateAge(fullBirth, now) {
+    const [by, bm, bd] = fullBirth.split('/').map(Number);
+    let age = now.getFullYear() - by;
+    const birthdayThisYear = new Date(now.getFullYear(), bm - 1, bd);
+    if (now < birthdayThisYear) age--;
+    return age;
+  }
+
+  function daysUntilNextBirthday(fullBirth, now) {
+    const [, bm, bd] = fullBirth.split('/').map(Number);
+    const thisYear = now.getFullYear();
+    const birthdayThisYear = new Date(thisYear, bm - 1, bd);
+    if (birthdayThisYear < now) {
+      birthdayThisYear.setFullYear(thisYear + 1);
+    }
+    const diff = birthdayThisYear - now;
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  }
+
+  function renderBirthdays() {
+    const now = new Date();
+    const list = document.getElementById('birthdayList');
+    const data = loadBirthdays();
+
+    data.sort((a, b) => {
+      return daysUntilNextBirthday(a.birth, now) - daysUntilNextBirthday(b.birth, now);
+    });
+
+    let isBirthdayToday = false;
+
+    list.innerHTML = '';
+    data.forEach((person, index) => {
+      const age = calculateAge(person.birth, now);
+      const daysLeft = daysUntilNextBirthday(person.birth, now);
+      const li = document.createElement('li');
+
+      if (daysLeft === 0) isBirthdayToday = true;
+
+      li.textContent = `${person.name}：${age}歳（あと${daysLeft}日）`;
+
+      const del = document.createElement('button');
+      del.textContent = '削除';
+      del.onclick = () => {
+        const updated = [...data];
+        updated.splice(index, 1);
+        saveBirthdays(updated);
+        renderBirthdays();
+      };
+
+      li.appendChild(del);
+      list.appendChild(li);
+    });
+
+    document.body.classList.toggle('sakura', isBirthdayToday);
+  }
+
+  function updateClock() {
+    const now = new Date();
+    const days = ['日', '月', '火', '水', '木', '金', '土'];
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const w = days[now.getDay()];
+    const h = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+
+    document.getElementById('clock').textContent = `${y}/${m}/${d}(${w}) ${h}:${min}:${s}`;
+    renderBirthdays();
+  }
+
+  // ✅ URLから設定を読み込む（?data=...）
+  function loadFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get('data');
+    if (raw) {
+      try {
+        const decoded = decodeURIComponent(raw);
+        const json = JSON.parse(decoded);
+        if (Array.isArray(json)) {
+          saveBirthdays(json);
+          alert("共有された誕生日リストを読み込みました！");
+        }
+      } catch (e) {
+        alert("読み込みに失敗しました（形式が不正）");
       }
-
-      const data = loadBirthdays();
-      data.push({ name, birth });
-      saveBirthdays(data);
-      document.getElementById('nameInput').value = '';
-      document.getElementById('birthInput').value = '';
-      renderBirthdays();
     }
+  }
 
-    function calculateAge(fullBirth, now) {
-      const [by, bm, bd] = fullBirth.split('/').map(Number);
-      let age = now.getFullYear() - by;
-      const birthdayThisYear = new Date(now.getFullYear(), bm - 1, bd);
-      if (now < birthdayThisYear) age--;
-      return age;
-    }
+  // ✅ 現在のデータをURLとして出力
+  function shareURL() {
+    const data = loadBirthdays();
+    const encoded = encodeURIComponent(JSON.stringify(data));
+    const url = `${location.origin}${location.pathname}?data=${encoded}`;
+    prompt("このURLを共有してください:", url);
+  }
 
-    function daysUntilNextBirthday(fullBirth, now) {
-      const [, bm, bd] = fullBirth.split('/').map(Number);
-      const thisYear = now.getFullYear();
-      const birthdayThisYear = new Date(thisYear, bm - 1, bd);
-      if (birthdayThisYear < now) {
-        birthdayThisYear.setFullYear(thisYear + 1);
-      }
-      const diff = birthdayThisYear - now;
-      return Math.ceil(diff / (1000 * 60 * 60 * 24));
-    }
+  // 📎 共有ボタンを自動追加
+  window.addEventListener('DOMContentLoaded', () => {
+    const btn = document.createElement('button');
+    btn.textContent = '設定を共有（URL生成）';
+    btn.onclick = shareURL;
+    document.body.appendChild(btn);
 
-    function renderBirthdays() {
-      const now = new Date();
-      const list = document.getElementById('birthdayList');
-      const data = loadBirthdays();
-
-      data.sort((a, b) => {
-        return daysUntilNextBirthday(a.birth, now) - daysUntilNextBirthday(b.birth, now);
-      });
-
-      let isBirthdayToday = false;
-
-      list.innerHTML = '';
-      data.forEach((person, index) => {
-        const age = calculateAge(person.birth, now);
-        const daysLeft = daysUntilNextBirthday(person.birth, now);
-        const li = document.createElement('li');
-
-        if (daysLeft === 0) isBirthdayToday = true;
-
-        li.textContent = `${person.name}：${age}歳（あと${daysLeft}日）`;
-
-        const del = document.createElement('button');
-        del.textContent = '削除';
-        del.onclick = () => {
-          const updated = [...data];
-          updated.splice(index, 1);
-          saveBirthdays(updated);
-          renderBirthdays();
-        };
-
-        li.appendChild(del);
-        list.appendChild(li);
-      });
-
-      document.body.classList.toggle('sakura', isBirthdayToday);
-    }
-
-    function updateClock() {
-      const now = new Date();
-      const days = ['日', '月', '火', '水', '木', '金', '土'];
-      const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      const d = String(now.getDate()).padStart(2, '0');
-      const w = days[now.getDay()];
-      const h = String(now.getHours()).padStart(2, '0');
-      const min = String(now.getMinutes()).padStart(2, '0');
-      const s = String(now.getSeconds()).padStart(2, '0');
-
-      document.getElementById('clock').textContent = `${y}/${m}/${d}(${w}) ${h}:${min}:${s}`;
-      renderBirthdays();
-    }
-
+    loadFromURL();
     renderBirthdays();
     updateClock();
     setInterval(updateClock, 1000);
-  </script>
+  });
+</script>
 </body>
 </html>
