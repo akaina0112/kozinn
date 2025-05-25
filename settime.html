@@ -2,8 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>誕生日時計</title>
-
+  <title>誕生日と年齢表示</title>
   <style>
     @font-face {
       font-family: 'PixelMplus';
@@ -14,27 +13,19 @@
       font-family: 'PixelMplus', sans-serif;
       text-align: center;
       margin-top: 40px;
-      font-size: 1.2em;
       background-size: cover;
-      background-repeat: no-repeat;
       transition: background-image 1s ease;
     }
 
     #clock {
       font-size: 2em;
       margin-bottom: 20px;
-      font-weight: bold;
     }
 
-    #birthdayForm input {
+    input, button {
       font-size: 1em;
       margin: 5px;
       padding: 5px;
-    }
-
-    #birthdayForm button {
-      font-size: 1em;
-      padding: 5px 10px;
     }
 
     ul {
@@ -55,15 +46,15 @@
   <h1>現在の時刻</h1>
   <div id="clock">読み込み中...</div>
 
-  <div id="birthdayForm">
-    <h2>誕生日を登録</h2>
+  <div>
+    <h2>誕生日を登録（YYYY/MM/DD）</h2>
     <input type="text" id="nameInput" placeholder="名前">
-    <input type="text" id="birthInput" placeholder="MM/DD">
+    <input type="text" id="birthInput" placeholder="例: 2000/05/25">
     <button onclick="addBirthday()">追加</button>
   </div>
 
   <div>
-    <h2>登録された誕生日（近い順）</h2>
+    <h2>登録一覧（誕生日が近い順）</h2>
     <ul id="birthdayList"></ul>
   </div>
 
@@ -79,9 +70,8 @@
     function addBirthday() {
       const name = document.getElementById('nameInput').value.trim();
       const birth = document.getElementById('birthInput').value.trim();
-
-      if (!name || !/^\d{2}\/\d{2}$/.test(birth)) {
-        alert("名前と誕生日（MM/DD形式）を入力してください");
+      if (!name || !/^\d{4}\/\d{2}\/\d{2}$/.test(birth)) {
+        alert("名前と誕生日（YYYY/MM/DD）を正しく入力してください");
         return;
       }
 
@@ -93,54 +83,55 @@
       renderBirthdays();
     }
 
-    function calculateAge(birthMD, now) {
-      const birthDate = new Date(`${now.getFullYear()}/${birthMD}`);
-      const thisYear = now.getFullYear();
-      const birthYear = birthDate > now ? thisYear - 1 : thisYear;
-      return birthYear ? thisYear - birthYear : 0;
+    function calculateAge(fullBirth, now) {
+      const [by, bm, bd] = fullBirth.split('/').map(Number);
+      let age = now.getFullYear() - by;
+      const birthdayThisYear = new Date(now.getFullYear(), bm - 1, bd);
+      if (now < birthdayThisYear) age--;
+      return age;
     }
 
-    function daysUntilNextBirthday(birthMD, now) {
-      const [mm, dd] = birthMD.split('/').map(Number);
-      const next = new Date(now.getFullYear(), mm - 1, dd);
-      if (next < now) {
-        next.setFullYear(next.getFullYear() + 1);
+    function daysUntilNextBirthday(fullBirth, now) {
+      const [, bm, bd] = fullBirth.split('/').map(Number);
+      const thisYear = now.getFullYear();
+      const birthdayThisYear = new Date(thisYear, bm - 1, bd);
+      if (birthdayThisYear < now) {
+        birthdayThisYear.setFullYear(thisYear + 1);
       }
-      const diff = Math.ceil((next - now) / (1000 * 60 * 60 * 24));
-      return diff;
+      const diff = birthdayThisYear - now;
+      return Math.ceil(diff / (1000 * 60 * 60 * 24));
     }
 
     function renderBirthdays() {
       const now = new Date();
       const list = document.getElementById('birthdayList');
-      let birthdays = loadBirthdays();
+      const data = loadBirthdays();
 
-      // 今日が誕生日の人がいれば背景を桜に
-      let isBirthdayToday = false;
-
-      // 日数ソート
-      birthdays.sort((a, b) => {
+      data.sort((a, b) => {
         return daysUntilNextBirthday(a.birth, now) - daysUntilNextBirthday(b.birth, now);
       });
 
+      let isBirthdayToday = false;
+
       list.innerHTML = '';
-      birthdays.forEach((entry, index) => {
-        const age = calculateAge(entry.birth, now);
-        const days = daysUntilNextBirthday(entry.birth, now);
+      data.forEach((person, index) => {
+        const age = calculateAge(person.birth, now);
+        const daysLeft = daysUntilNextBirthday(person.birth, now);
         const li = document.createElement('li');
 
-        if (days === 0) isBirthdayToday = true;
+        if (daysLeft === 0) isBirthdayToday = true;
 
-        li.textContent = `${entry.name}：${age}歳（あと${days}日）`;
+        li.textContent = `${person.name}：${age}歳（あと${daysLeft}日）`;
 
         const del = document.createElement('button');
         del.textContent = '削除';
         del.onclick = () => {
-          const updated = [...birthdays];
+          const updated = [...data];
           updated.splice(index, 1);
           saveBirthdays(updated);
           renderBirthdays();
         };
+
         li.appendChild(del);
         list.appendChild(li);
       });
@@ -154,13 +145,12 @@
       const y = now.getFullYear();
       const m = String(now.getMonth() + 1).padStart(2, '0');
       const d = String(now.getDate()).padStart(2, '0');
-      const day = days[now.getDay()];
+      const w = days[now.getDay()];
       const h = String(now.getHours()).padStart(2, '0');
       const min = String(now.getMinutes()).padStart(2, '0');
       const s = String(now.getSeconds()).padStart(2, '0');
 
-      document.getElementById('clock').textContent = `${y}/${m}/${d}(${day}) ${h}:${min}:${s}`;
-
+      document.getElementById('clock').textContent = `${y}/${m}/${d}(${w}) ${h}:${min}:${s}`;
       renderBirthdays();
     }
 
