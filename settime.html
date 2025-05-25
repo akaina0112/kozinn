@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>リアルタイム時計（桜の日対応）</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin-top: 100px;
+      font-size: 2em;
+      transition: background-image 1s ease;
+      background-size: cover;
+    }
+
+    #clock {
+      font-weight: bold;
+      font-size: 2.5em;
+    }
+
+    #dateList {
+      margin-top: 30px;
+    }
+
+    input, button {
+      font-size: 1em;
+      margin: 5px;
+    }
+
+    .sakura {
+      background-image: url('https://upload.wikimedia.org/wikipedia/commons/6/6b/Sakura_tree_in_full_bloom.jpg');
+    }
+  </style>
+</head>
+<body>
+  <h1>現在の時刻</h1>
+  <div id="clock">読み込み中...</div>
+
+  <div id="dateList">
+    <h2>背景を桜にしたい日（MM/DD）</h2>
+    <input type="text" id="dateInput" placeholder="例: 04/01">
+    <button onclick="addSpecialDate()">追加</button>
+    <ul id="savedDates"></ul>
+  </div>
+
+  <script>
+    const clock = document.getElementById('clock');
+    const savedDatesList = document.getElementById('savedDates');
+
+    function loadSpecialDates() {
+      return JSON.parse(localStorage.getItem('specialDates') || '[]');
+    }
+
+    function saveSpecialDates(dates) {
+      localStorage.setItem('specialDates', JSON.stringify(dates));
+    }
+
+    function addSpecialDate() {
+      const input = document.getElementById('dateInput');
+      const value = input.value.trim();
+      if (/^\d{2}\/\d{2}$/.test(value)) {
+        let dates = loadSpecialDates();
+        if (!dates.includes(value)) {
+          dates.push(value);
+          saveSpecialDates(dates);
+          renderDates();
+        }
+        input.value = '';
+      } else {
+        alert('日付は MM/DD 形式で入力してください。例: 04/01');
+      }
+    }
+
+    function renderDates() {
+      const dates = loadSpecialDates();
+      savedDatesList.innerHTML = '';
+      dates.forEach(date => {
+        const li = document.createElement('li');
+        li.textContent = date + ' ';
+        const del = document.createElement('button');
+        del.textContent = '削除';
+        del.onclick = () => {
+          const newDates = loadSpecialDates().filter(d => d !== date);
+          saveSpecialDates(newDates);
+          renderDates();
+        };
+        li.appendChild(del);
+        savedDatesList.appendChild(li);
+      });
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const days = ['日', '月', '火', '水', '木', '金', '土'];
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const date = String(now.getDate()).padStart(2, '0');
+      const day = days[now.getDay()];
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+
+      const timeString = `${year}/${month}/${date}(${day}) ${hours}:${minutes}:${seconds}`;
+      clock.textContent = timeString;
+
+      // 桜背景に切り替え
+      const today = `${month}/${date}`;
+      const specialDates = loadSpecialDates();
+      if (specialDates.includes(today)) {
+        document.body.classList.add('sakura');
+      } else {
+        document.body.classList.remove('sakura');
+      }
+    }
+
+    // 初期化
+    renderDates();
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>
