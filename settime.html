@@ -2,41 +2,39 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>リアルタイム時計＋年齢一覧＋桜背景</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap" rel="stylesheet">
+  <title>誕生日時計</title>
 
   <style>
+    @font-face {
+      font-family: 'PixelMplus';
+      src: url('https://akaina0809.github.io/error/PixelMplus12-Regular.ttf') format('truetype');
+    }
+
     body {
-      font-family: 'Noto Sans JP', sans-serif;
+      font-family: 'PixelMplus', sans-serif;
       text-align: center;
-      margin-top: 60px;
+      margin-top: 40px;
       font-size: 1.2em;
-      transition: background-image 1s ease;
       background-size: cover;
+      background-repeat: no-repeat;
+      transition: background-image 1s ease;
     }
 
     #clock {
-      font-weight: bold;
-      font-size: 2.2em;
+      font-size: 2em;
       margin-bottom: 20px;
+      font-weight: bold;
     }
 
-    #ageList {
-      margin-top: 20px;
-    }
-
-    #dateList {
-      margin-top: 30px;
-    }
-
-    input, button {
+    #birthdayForm input {
       font-size: 1em;
       margin: 5px;
       padding: 5px;
     }
 
-    .sakura {
-      background-image: url('https://upload.wikimedia.org/wikipedia/commons/6/6b/Sakura_tree_in_full_bloom.jpg');
+    #birthdayForm button {
+      font-size: 1em;
+      padding: 5px 10px;
     }
 
     ul {
@@ -45,7 +43,11 @@
     }
 
     li {
-      margin-bottom: 5px;
+      margin-bottom: 8px;
+    }
+
+    .sakura {
+      background-image: url('https://upload.wikimedia.org/wikipedia/commons/6/6b/Sakura_tree_in_full_bloom.jpg');
     }
   </style>
 </head>
@@ -53,148 +55,116 @@
   <h1>現在の時刻</h1>
   <div id="clock">読み込み中...</div>
 
-  <div id="ageList">
-    <h2>登録された年齢</h2>
+  <div id="birthdayForm">
+    <h2>誕生日を登録</h2>
     <input type="text" id="nameInput" placeholder="名前">
-    <input type="text" id="birthInput" placeholder="YYYY/MM/DD">
-    <button onclick="addPerson()">追加</button>
-    <ul id="peopleList"></ul>
+    <input type="text" id="birthInput" placeholder="MM/DD">
+    <button onclick="addBirthday()">追加</button>
   </div>
 
-  <div id="dateList">
-    <h2>背景を桜にしたい日（MM/DD）</h2>
-    <input type="text" id="dateInput" placeholder="例: 04/01">
-    <button onclick="addSpecialDate()">追加</button>
-    <ul id="savedDates"></ul>
+  <div>
+    <h2>登録された誕生日（近い順）</h2>
+    <ul id="birthdayList"></ul>
   </div>
 
   <script>
-    function loadPeople() {
-      return JSON.parse(localStorage.getItem('people') || '[]');
+    function loadBirthdays() {
+      return JSON.parse(localStorage.getItem('birthdays') || '[]');
     }
 
-    function savePeople(people) {
-      localStorage.setItem('people', JSON.stringify(people));
+    function saveBirthdays(data) {
+      localStorage.setItem('birthdays', JSON.stringify(data));
     }
 
-    function addPerson() {
+    function addBirthday() {
       const name = document.getElementById('nameInput').value.trim();
       const birth = document.getElementById('birthInput').value.trim();
-      if (!name || !/^\d{4}\/\d{2}\/\d{2}$/.test(birth)) {
-        alert("名前と生年月日（YYYY/MM/DD）を正しく入力してください。");
+
+      if (!name || !/^\d{2}\/\d{2}$/.test(birth)) {
+        alert("名前と誕生日（MM/DD形式）を入力してください");
         return;
       }
-      const people = loadPeople();
-      people.push({ name, birth });
-      savePeople(people);
-      renderPeople();
+
+      const data = loadBirthdays();
+      data.push({ name, birth });
+      saveBirthdays(data);
       document.getElementById('nameInput').value = '';
       document.getElementById('birthInput').value = '';
+      renderBirthdays();
     }
 
-    function calculateAge(birthStr, now) {
-      const [by, bm, bd] = birthStr.split('/').map(Number);
-      let age = now.getFullYear() - by;
-      const hasBirthdayPassed =
-        now.getMonth() + 1 > bm || (now.getMonth() + 1 === bm && now.getDate() >= bd);
-      if (!hasBirthdayPassed) age -= 1;
-      return age;
+    function calculateAge(birthMD, now) {
+      const birthDate = new Date(`${now.getFullYear()}/${birthMD}`);
+      const thisYear = now.getFullYear();
+      const birthYear = birthDate > now ? thisYear - 1 : thisYear;
+      return birthYear ? thisYear - birthYear : 0;
     }
 
-    function renderPeople() {
-      const list = document.getElementById('peopleList');
-      const now = new Date();
-      const people = loadPeople();
-      list.innerHTML = '';
-      people.forEach((person, index) => {
-        const li = document.createElement('li');
-        const age = calculateAge(person.birth, now);
-        li.textContent = `${person.name}：${age}歳`;
-
-        const del = document.createElement('button');
-        del.textContent = '削除';
-        del.onclick = () => {
-          const newPeople = [...people];
-          newPeople.splice(index, 1);
-          savePeople(newPeople);
-          renderPeople();
-        };
-
-        li.appendChild(del);
-        list.appendChild(li);
-      });
-    }
-
-    function loadSpecialDates() {
-      return JSON.parse(localStorage.getItem('specialDates') || '[]');
-    }
-
-    function saveSpecialDates(dates) {
-      localStorage.setItem('specialDates', JSON.stringify(dates));
-    }
-
-    function addSpecialDate() {
-      const input = document.getElementById('dateInput');
-      const value = input.value.trim();
-      if (/^\d{2}\/\d{2}$/.test(value)) {
-        let dates = loadSpecialDates();
-        if (!dates.includes(value)) {
-          dates.push(value);
-          saveSpecialDates(dates);
-          renderDates();
-        }
-        input.value = '';
-      } else {
-        alert('日付は MM/DD 形式で入力してください。例: 04/01');
+    function daysUntilNextBirthday(birthMD, now) {
+      const [mm, dd] = birthMD.split('/').map(Number);
+      const next = new Date(now.getFullYear(), mm - 1, dd);
+      if (next < now) {
+        next.setFullYear(next.getFullYear() + 1);
       }
+      const diff = Math.ceil((next - now) / (1000 * 60 * 60 * 24));
+      return diff;
     }
 
-    function renderDates() {
-      const dates = loadSpecialDates();
-      const list = document.getElementById('savedDates');
+    function renderBirthdays() {
+      const now = new Date();
+      const list = document.getElementById('birthdayList');
+      let birthdays = loadBirthdays();
+
+      // 今日が誕生日の人がいれば背景を桜に
+      let isBirthdayToday = false;
+
+      // 日数ソート
+      birthdays.sort((a, b) => {
+        return daysUntilNextBirthday(a.birth, now) - daysUntilNextBirthday(b.birth, now);
+      });
+
       list.innerHTML = '';
-      dates.forEach((date, index) => {
+      birthdays.forEach((entry, index) => {
+        const age = calculateAge(entry.birth, now);
+        const days = daysUntilNextBirthday(entry.birth, now);
         const li = document.createElement('li');
-        li.textContent = date + ' ';
+
+        if (days === 0) isBirthdayToday = true;
+
+        li.textContent = `${entry.name}：${age}歳（あと${days}日）`;
+
         const del = document.createElement('button');
         del.textContent = '削除';
         del.onclick = () => {
-          const newDates = [...dates];
-          newDates.splice(index, 1);
-          saveSpecialDates(newDates);
-          renderDates();
+          const updated = [...birthdays];
+          updated.splice(index, 1);
+          saveBirthdays(updated);
+          renderBirthdays();
         };
         li.appendChild(del);
         list.appendChild(li);
       });
+
+      document.body.classList.toggle('sakura', isBirthdayToday);
     }
 
     function updateClock() {
       const now = new Date();
       const days = ['日', '月', '火', '水', '木', '金', '土'];
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const date = String(now.getDate()).padStart(2, '0');
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
       const day = days[now.getDay()];
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const h = String(now.getHours()).padStart(2, '0');
+      const min = String(now.getMinutes()).padStart(2, '0');
+      const s = String(now.getSeconds()).padStart(2, '0');
 
-      const timeString = `${year}/${month}/${date}(${day}) ${hours}:${minutes}:${seconds}`;
-      document.getElementById('clock').textContent = timeString;
+      document.getElementById('clock').textContent = `${y}/${m}/${d}(${day}) ${h}:${min}:${s}`;
 
-      // 桜背景
-      const today = `${month}/${date}`;
-      const specialDates = loadSpecialDates();
-      document.body.classList.toggle('sakura', specialDates.includes(today));
-
-      // 年齢再描画（毎秒更新）
-      renderPeople();
+      renderBirthdays();
     }
 
-    // 初期化
-    renderPeople();
-    renderDates();
+    renderBirthdays();
     updateClock();
     setInterval(updateClock, 1000);
   </script>
