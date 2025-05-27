@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Minecraft 座標変換ツール</title>
   <link rel="icon" href="https://static.wikia.nocookie.net/minecraft_gamepedia/images/5/5e/Nether_Portal_JE3_BE2.png" type="image/png">
   <style>
@@ -26,7 +25,6 @@
       display: flex;
       align-items: center;
       font-size: 1.5em;
-      font-family: 'PixelMplus', sans-serif;
     }
 
     h1 img {
@@ -54,7 +52,6 @@
       width: 100%;
       box-sizing: border-box;
       margin-bottom: 10px;
-      font-family: 'PixelMplus', sans-serif;
     }
 
     .button-row {
@@ -72,20 +69,24 @@
       cursor: pointer;
       min-width: 48%;
       box-sizing: border-box;
-      font-family: 'PixelMplus', sans-serif;
     }
 
     button:hover {
       background-color: #45a049;
     }
 
-    p {
+    .result-box {
       background-color: #222;
       padding: 10px;
       border: 1px solid #444;
       margin-top: 10px;
       font-size: 0.95em;
-      font-family: 'PixelMplus', sans-serif;
+      cursor: pointer;
+      user-select: text;
+    }
+
+    .copied {
+      color: #4CAF50;
     }
 
     @media (max-width: 500px) {
@@ -107,18 +108,8 @@
   </h1>
 
   <h2>座標入力</h2>
-
-  <label for="owX">オーバーワールド X座標</label>
-  <input type="number" id="owX" placeholder="例: 2872">
-
-  <label for="owZ">オーバーワールド Z座標</label>
-  <input type="number" id="owZ" placeholder="例: 248">
-
-  <label for="nX">ネザー X座標</label>
-  <input type="number" id="nX" placeholder="例: 359">
-
-  <label for="nZ">ネザー Z座標</label>
-  <input type="number" id="nZ" placeholder="例: 31">
+  <label for="nXYZ">X Y Z 座標（例: -376 ~ 344）</label>
+  <input type="text" id="nXYZ" placeholder="例: -376, ~, 344">
 
   <div class="button-row">
     <button onclick="toNether()">OW ➜ ネザー計算</button>
@@ -126,38 +117,62 @@
     <button onclick="calculateBoth()">両方計算</button>
   </div>
 
-  <h3>結果</h3>
-  <p id="netherResult">🌋 ネザー座標 結果がここに表示されます</p>
-  <p id="overResult">🌍 オーバーワールド座標 結果がここに表示されます</p>
+  <h3>結果（クリックでコピー）</h3>
+  <p id="netherResult" class="result-box" onclick="copyText(this)">🌋 ネザー座標 結果がここに表示されます</p>
+  <p id="overResult" class="result-box" onclick="copyText(this)">🌍 オーバーワールド座標 結果がここに表示されます</p>
 
   <script>
+    function parseCoordinates(input) {
+      const parts = input.trim().split(/[\s,　]+/); // 半角スペース・カンマ・全角スペース
+      if (parts.length !== 3) return null;
+      return {
+        x: Number(parts[0]),
+        z: Number(parts[2]),
+        xRaw: parts[0],
+        zRaw: parts[2],
+      };
+    }
+
     function toNether() {
-      const x = Number(document.getElementById('owX').value);
-      const z = Number(document.getElementById('owZ').value);
-      if (isNaN(x) || isNaN(z)) {
-        document.getElementById('netherResult').innerText = "⚠️ 有効なオーバーワールド座標を入力してください";
+      const input = document.getElementById('nXYZ').value;
+      const coords = parseCoordinates(input);
+      if (!coords || isNaN(coords.x) || isNaN(coords.z)) {
+        document.getElementById('netherResult').innerText = "⚠️ オーバーワールド座標（X Z）を正しく入力してください";
         return;
       }
-      const netherX = (x / 8).toFixed(2);
-      const netherZ = (z / 8).toFixed(2);
-      document.getElementById('netherResult').innerText = `✅ ネザー座標: X=${netherX}, Z=${netherZ}`;
+      const nX = (coords.x / 8).toFixed(2);
+      const nZ = (coords.z / 8).toFixed(2);
+      document.getElementById('netherResult').innerText = `✅ ネザー座標: X=${nX}, Z=${nZ}`;
     }
 
     function toOverworld() {
-      const x = Number(document.getElementById('nX').value);
-      const z = Number(document.getElementById('nZ').value);
-      if (isNaN(x) || isNaN(z)) {
-        document.getElementById('overResult').innerText = "⚠️ 有効なネザー座標を入力してください";
+      const input = document.getElementById('nXYZ').value;
+      const coords = parseCoordinates(input);
+      if (!coords || isNaN(coords.x) || isNaN(coords.z)) {
+        document.getElementById('overResult').innerText = "⚠️ ネザー座標（X Z）を正しく入力してください";
         return;
       }
-      const owX = (x * 8).toFixed(2);
-      const owZ = (z * 8).toFixed(2);
+      const owX = (coords.x * 8).toFixed(2);
+      const owZ = (coords.z * 8).toFixed(2);
       document.getElementById('overResult').innerText = `✅ オーバーワールド座標: X=${owX}, Z=${owZ}`;
     }
 
     function calculateBoth() {
       toNether();
       toOverworld();
+    }
+
+    function copyText(elem) {
+      const text = elem.innerText.replace(/^✅ /, "").replace(/^🌋 /, "").replace(/^🌍 /, "");
+      navigator.clipboard.writeText(text).then(() => {
+        const original = elem.innerText;
+        elem.classList.add('copied');
+        elem.innerText = "✅ コピーしました！ → " + text;
+        setTimeout(() => {
+          elem.innerText = original;
+          elem.classList.remove('copied');
+        }, 1500);
+      });
     }
   </script>
 
