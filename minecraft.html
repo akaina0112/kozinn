@@ -1,0 +1,165 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minecraft 座標変換ツール</title>
+  <link rel="icon" href="https://static.wikia.nocookie.net/minecraft_gamepedia/images/5/5e/Nether_Portal_JE3_BE2.png" type="image/png">
+  <style>
+    @font-face {
+      font-family: 'PixelMplus';
+      src: url('https://akaina0809.github.io/error/PixelMplus12-Regular.ttf?v=1') format('truetype');
+      font-display: swap;
+    }
+
+    body {
+      background-color: #1e1e1e;
+      color: #ffffff;
+      font-family: 'PixelMplus', sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    h1 {
+      display: flex;
+      align-items: center;
+      font-size: 1.5em;
+      font-family: 'PixelMplus', sans-serif;
+    }
+
+    h1 img {
+      width: 32px;
+      height: 32px;
+      margin-right: 10px;
+    }
+
+    h2, h3 {
+      border-bottom: 1px solid #444;
+      padding-bottom: 5px;
+      margin-top: 30px;
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+
+    input {
+      background-color: #333;
+      color: #fff;
+      border: 1px solid #555;
+      padding: 8px;
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+      font-family: 'PixelMplus', sans-serif;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      flex: 1;
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 10px;
+      cursor: pointer;
+      min-width: 48%;
+      box-sizing: border-box;
+      font-family: 'PixelMplus', sans-serif;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    p {
+      background-color: #222;
+      padding: 10px;
+      border: 1px solid #444;
+      margin-top: 10px;
+      font-size: 0.95em;
+      font-family: 'PixelMplus', sans-serif;
+    }
+
+    @media (max-width: 500px) {
+      body {
+        padding: 10px;
+      }
+
+      button {
+        min-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>
+    <img src="https://static.wikia.nocookie.net/minecraft_gamepedia/images/5/5e/Nether_Portal_JE3_BE2.png" alt="Nether">
+    ネザー⇔オーバーワールド 座標変換
+  </h1>
+
+  <h2>座標入力</h2>
+
+  <label for="owX">オーバーワールド X座標</label>
+  <input type="number" id="owX" placeholder="例: 2872">
+
+  <label for="owZ">オーバーワールド Z座標</label>
+  <input type="number" id="owZ" placeholder="例: 248">
+
+  <label for="nX">ネザー X座標</label>
+  <input type="number" id="nX" placeholder="例: 359">
+
+  <label for="nZ">ネザー Z座標</label>
+  <input type="number" id="nZ" placeholder="例: 31">
+
+  <div class="button-row">
+    <button onclick="toNether()">OW ➜ ネザー計算</button>
+    <button onclick="toOverworld()">ネザー ➜ OW計算</button>
+    <button onclick="calculateBoth()">両方計算</button>
+  </div>
+
+  <h3>結果</h3>
+  <p id="netherResult">🌋 ネザー座標 結果がここに表示されます</p>
+  <p id="overResult">🌍 オーバーワールド座標 結果がここに表示されます</p>
+
+  <script>
+    function toNether() {
+      const x = Number(document.getElementById('owX').value);
+      const z = Number(document.getElementById('owZ').value);
+      if (isNaN(x) || isNaN(z)) {
+        document.getElementById('netherResult').innerText = "⚠️ 有効なオーバーワールド座標を入力してください";
+        return;
+      }
+      const netherX = (x / 8).toFixed(2);
+      const netherZ = (z / 8).toFixed(2);
+      document.getElementById('netherResult').innerText = `✅ ネザー座標: X=${netherX}, Z=${netherZ}`;
+    }
+
+    function toOverworld() {
+      const x = Number(document.getElementById('nX').value);
+      const z = Number(document.getElementById('nZ').value);
+      if (isNaN(x) || isNaN(z)) {
+        document.getElementById('overResult').innerText = "⚠️ 有効なネザー座標を入力してください";
+        return;
+      }
+      const owX = (x * 8).toFixed(2);
+      const owZ = (z * 8).toFixed(2);
+      document.getElementById('overResult').innerText = `✅ オーバーワールド座標: X=${owX}, Z=${owZ}`;
+    }
+
+    function calculateBoth() {
+      toNether();
+      toOverworld();
+    }
+  </script>
+
+</body>
+</html>
