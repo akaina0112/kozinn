@@ -94,9 +94,9 @@
   function daysUntilNextBirthday(fullBirth, now) {
     const [, bm, bd] = fullBirth.split('/').map(Number);
     const thisYear = now.getFullYear();
-    const birthdayThisYear = new Date(thisYear, bm - 1, bd);
+    let birthdayThisYear = new Date(thisYear, bm - 1, bd);
     if (birthdayThisYear < now) {
-      birthdayThisYear.setFullYear(thisYear + 1);
+      birthdayThisYear = new Date(thisYear + 1, bm - 1, bd);
     }
     const diff = birthdayThisYear - now;
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
@@ -139,32 +139,23 @@
     document.body.classList.toggle('sakura', isBirthdayToday);
   }
 
-let lastDate = null; // 最初は未設定
+  function updateClock() {
+    const now = new Date();
+    const days = ['日', '月', '火', '水', '木', '金', '土'];
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const w = days[now.getDay()];
+    const h = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
 
-function updateClock() {
-  const now = new Date();
+    document.getElementById('clock').textContent = `${y}/${m}/${d}(${w}) ${h}:${min}:${s}`;
 
-  // 表示の更新（時計）
-  const days = ['日', '月', '火', '水', '木', '金', '土'];
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  const w = days[now.getDay()];
-  const h = String(now.getHours()).padStart(2, '0');
-  const min = String(now.getMinutes()).padStart(2, '0');
-  const s = String(now.getSeconds()).padStart(2, '0');
-
-  document.getElementById('clock').textContent = `${y}/${m}/${d}(${w}) ${h}:${min}:${s}`;
-
-  // ✅ 日付変化を検知して誕生日表示を更新
-  const today = `${y}-${m}-${d}`;
-  if (lastDate !== today) {
-    lastDate = today;
-    renderBirthdays(); // 日が変わった → 年齢など再計算
+    // ✅ 毎秒でも誕生日再描画（常に最新表示）
+    renderBirthdays();
   }
-}
 
-  // ✅ URLから設定を読み込む（?data=...）
   function loadFromURL() {
     const params = new URLSearchParams(window.location.search);
     const raw = params.get('data');
@@ -182,22 +173,18 @@ function updateClock() {
     }
   }
 
-  // ✅ 現在のデータをURLとして出力
-function shareURL() {
-  const data = loadBirthdays();
-  const encoded = encodeURIComponent(JSON.stringify(data));
-  const url = `${location.origin}${location.pathname}?data=${encoded}`;
+  function shareURL() {
+    const data = loadBirthdays();
+    const encoded = encodeURIComponent(JSON.stringify(data));
+    const url = `${location.origin}${location.pathname}?data=${encoded}`;
 
-  // クリップボードにコピー
-  navigator.clipboard.writeText(url).then(() => {
-    alert("URLをクリップボードにコピーしました:\n" + url);
-  }).catch(err => {
-    // 失敗した場合はpromptで手動コピーを促す
-    prompt("このURLを共有してください:", url);
-  });
-}
+    navigator.clipboard.writeText(url).then(() => {
+      alert("URLをクリップボードにコピーしました:\n" + url);
+    }).catch(() => {
+      prompt("このURLを共有してください:", url);
+    });
+  }
 
-  // 📎 共有ボタンを自動追加
   window.addEventListener('DOMContentLoaded', () => {
     const btn = document.createElement('button');
     btn.textContent = '設定を共有（URL生成）';
