@@ -137,7 +137,7 @@
       const input = document.getElementById('nXYZ').value;
       const coords = parseCoordinates(input);
       if (!coords || isNaN(coords.x) || isNaN(coords.z)) {
-        document.getElementById('netherResult').innerText = "⚠️ オーバーワールド座標（X Z）を正しく入力してください";
+        document.getElementById('netherResult').innerText = "⚠️ オーバーワールド座標を正しく入力してください";
         return;
       }
       const nX = (coords.x / 8).toFixed(2);
@@ -149,7 +149,7 @@
       const input = document.getElementById('nXYZ').value;
       const coords = parseCoordinates(input);
       if (!coords || isNaN(coords.x) || isNaN(coords.z)) {
-        document.getElementById('overResult').innerText = "⚠️ ネザー座標（X Z）を正しく入力してください";
+        document.getElementById('overResult').innerText = "⚠️ ネザー座標を正しく入力してください";
         return;
       }
       const owX = (coords.x * 8).toFixed(2);
