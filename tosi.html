@@ -75,14 +75,21 @@
 </div>
 
 <script>
-function parseDate(text) {
-  const parts = text.trim().split(/\/|-/);
+// 日付文字列をDateに変換する（例：'1990/02/06' → Dateオブジェクト）
+function parseDate(str) {
+  const parts = str.split('/');
   if(parts.length !== 3) return null;
-  let y = parseInt(parts[0], 10);
-  let m = parseInt(parts[1], 10);
-  let d = parseInt(parts[2], 10);
-  if(isNaN(y) || isNaN(m) || isNaN(d)) return null;
-  return new Date(y, m - 1, d);
+  return new Date(parts[0], parts[1] - 1, parts[2]);
+}
+
+// 誕生日から満年齢を計算
+function getAge(birth, today) {
+  let age = today.getFullYear() - birth.getFullYear();
+  const thisYearBirthday = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
+  if(today < thisYearBirthday) {
+    age -= 1;
+  }
+  return age;
 }
 
 function calculate() {
@@ -97,25 +104,16 @@ function calculate() {
     return;
   }
 
-  let older = b1 < b2 ? b1 : b2;
-  let younger = b1 >= b2 ? b1 : b2;
+  const today = new Date();
 
-  let diffYears = younger.getFullYear() - older.getFullYear();
-  let diffMonths = younger.getMonth() - older.getMonth();
-  let diffDays = younger.getDate() - older.getDate();
+  const age1 = getAge(b1, today);
+  const age2 = getAge(b2, today);
 
-  let totalMonths = diffYears * 12 + diffMonths;
-  if(diffDays < 0) totalMonths -= 1;
+  const diff = Math.abs(age1 - age2);
 
-  let yearDifference = Math.floor(totalMonths / 12);
-  let leftoverMonths = totalMonths % 12;
-
-  if(leftoverMonths >= 6) {
-    yearDifference += 1;
-  }
-
-  document.getElementById("result").textContent = `AさんとBさんの歳の差は ${yearDifference}歳くらいです。`;
+  document.getElementById("result").textContent = `2人の歳の差は約 ${diff}歳です。`;
 }
+
 </script>
 
 </body>
