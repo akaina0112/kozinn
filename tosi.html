@@ -1,79 +1,101 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>歳の差計算ツール</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      padding: 2em;
-      background: #f0f0f0;
-    }
-    input, button {
-      padding: 0.5em;
-      margin: 0.5em;
-      font-size: 16px;
-    }
-    button {
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-    #result {
-      margin-top: 1em;
-      font-size: 20px;
-      font-weight: bold;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>歳の差計算ツール（記入式）</title>
+<style>
+  body {
+    font-family: sans-serif;
+    padding: 2em;
+    background: #f9f9f9;
+  }
+  label {
+    display: block;
+    margin-top: 1em;
+  }
+  input {
+    font-size: 16px;
+    padding: 6px 8px;
+    width: 150px;
+  }
+  button {
+    margin-top: 1.5em;
+    padding: 8px 16px;
+    font-size: 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #0056b3;
+  }
+  #result {
+    margin-top: 2em;
+    font-weight: bold;
+    font-size: 18px;
+  }
+</style>
 </head>
 <body>
 
-  <h1>🧮 歳の差計算ツール</h1>
+<h1>🧮 歳の差計算ツール（記入方式）</h1>
 
-  <p>Aさんの誕生日：<input type="date" id="birth1"></p>
-  <p>Bさんの誕生日：<input type="date" id="birth2"></p>
+<label for="birth1">Aさんの誕生日（例: 1990/02/06）</label>
+<input type="text" id="birth1" placeholder="YYYY/MM/DD または YYYY-MM-DD" />
 
-  <button onclick="calculate()">歳の差を計算</button>
+<label for="birth2">Bさんの誕生日（例: 1995/08/15）</label>
+<input type="text" id="birth2" placeholder="YYYY/MM/DD または YYYY-MM-DD" />
 
-  <div id="result"></div>
+<button onclick="calculate()">計算する</button>
 
-  <script>
-    function calculate() {
-      const b1 = new Date(document.getElementById('birth1').value);
-      const b2 = new Date(document.getElementById('birth2').value);
+<div id="result"></div>
 
-      if (isNaN(b1) || isNaN(b2)) {
-        document.getElementById("result").textContent = "日付を正しく入力してください。";
-        return;
-      }
+<script>
+function parseDate(text) {
+  // YYYY/MM/DD または YYYY-MM-DD 形式に対応
+  const parts = text.trim().split(/\/|-/);
+  if(parts.length !== 3) return null;
+  let y = parseInt(parts[0], 10);
+  let m = parseInt(parts[1], 10);
+  let d = parseInt(parts[2], 10);
+  if(isNaN(y) || isNaN(m) || isNaN(d)) return null;
+  return new Date(y, m - 1, d);
+}
 
-      let older = b1 < b2 ? b1 : b2;
-      let younger = b1 >= b2 ? b1 : b2;
+function calculate() {
+  const b1txt = document.getElementById("birth1").value;
+  const b2txt = document.getElementById("birth2").value;
 
-      let diffYears = younger.getFullYear() - older.getFullYear();
-      let diffMonths = younger.getMonth() - older.getMonth();
-      let diffDays = younger.getDate() - older.getDate();
+  const b1 = parseDate(b1txt);
+  const b2 = parseDate(b2txt);
 
-      let totalMonths = diffYears * 12 + diffMonths;
-      if (diffDays < 0) totalMonths -= 1;
+  if(!b1 || !b2) {
+    document.getElementById("result").textContent = "日付の形式が正しくありません。例: 1990/02/06";
+    return;
+  }
 
-      let yearDifference = Math.floor(totalMonths / 12);
-      let leftoverMonths = totalMonths % 12;
+  let older = b1 < b2 ? b1 : b2;
+  let younger = b1 >= b2 ? b1 : b2;
 
-      if (leftoverMonths >= 6) {
-        yearDifference += 1; // 半年以上なら繰り上げ
-      }
+  let diffYears = younger.getFullYear() - older.getFullYear();
+  let diffMonths = younger.getMonth() - older.getMonth();
+  let diffDays = younger.getDate() - older.getDate();
 
-      document.getElementById("result").textContent =
-        `AさんとBさんの歳の差は ${yearDifference}歳くらいです。`;
-    }
-  </script>
+  let totalMonths = diffYears * 12 + diffMonths;
+  if(diffDays < 0) totalMonths -= 1;
+
+  let yearDifference = Math.floor(totalMonths / 12);
+  let leftoverMonths = totalMonths % 12;
+
+  if(leftoverMonths >= 6) {
+    yearDifference += 1;
+  }
+
+  document.getElementById("result").textContent = `AさんとBさんの歳の差は ${yearDifference}歳くらいです。`;
+}
+</script>
 
 </body>
 </html>
