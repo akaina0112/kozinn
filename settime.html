@@ -139,20 +139,30 @@
     document.body.classList.toggle('sakura', isBirthdayToday);
   }
 
-  function updateClock() {
-    const now = new Date();
-    const days = ['日', '月', '火', '水', '木', '金', '土'];
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    const w = days[now.getDay()];
-    const h = String(now.getHours()).padStart(2, '0');
-    const min = String(now.getMinutes()).padStart(2, '0');
-    const s = String(now.getSeconds()).padStart(2, '0');
+let lastDate = null; // 最初は未設定
 
-    document.getElementById('clock').textContent = `${y}/${m}/${d}(${w}) ${h}:${min}:${s}`;
-    renderBirthdays();
+function updateClock() {
+  const now = new Date();
+
+  // 表示の更新（時計）
+  const days = ['日', '月', '火', '水', '木', '金', '土'];
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  const w = days[now.getDay()];
+  const h = String(now.getHours()).padStart(2, '0');
+  const min = String(now.getMinutes()).padStart(2, '0');
+  const s = String(now.getSeconds()).padStart(2, '0');
+
+  document.getElementById('clock').textContent = `${y}/${m}/${d}(${w}) ${h}:${min}:${s}`;
+
+  // ✅ 日付変化を検知して誕生日表示を更新
+  const today = `${y}-${m}-${d}`;
+  if (lastDate !== today) {
+    lastDate = today;
+    renderBirthdays(); // 日が変わった → 年齢など再計算
   }
+}
 
   // ✅ URLから設定を読み込む（?data=...）
   function loadFromURL() {
