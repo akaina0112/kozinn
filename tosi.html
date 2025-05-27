@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>歳の差計算ツール</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 2em;
+      background: #f0f0f0;
+    }
+    input, button {
+      padding: 0.5em;
+      margin: 0.5em;
+      font-size: 16px;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #result {
+      margin-top: 1em;
+      font-size: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🧮 歳の差計算ツール</h1>
+
+  <p>Aさんの誕生日：<input type="date" id="birth1"></p>
+  <p>Bさんの誕生日：<input type="date" id="birth2"></p>
+
+  <button onclick="calculate()">歳の差を計算</button>
+
+  <div id="result"></div>
+
+  <script>
+    function calculate() {
+      const b1 = new Date(document.getElementById('birth1').value);
+      const b2 = new Date(document.getElementById('birth2').value);
+
+      if (isNaN(b1) || isNaN(b2)) {
+        document.getElementById("result").textContent = "日付を正しく入力してください。";
+        return;
+      }
+
+      let older = b1 < b2 ? b1 : b2;
+      let younger = b1 >= b2 ? b1 : b2;
+
+      let diffYears = younger.getFullYear() - older.getFullYear();
+      let diffMonths = younger.getMonth() - older.getMonth();
+      let diffDays = younger.getDate() - older.getDate();
+
+      let totalMonths = diffYears * 12 + diffMonths;
+      if (diffDays < 0) totalMonths -= 1;
+
+      let yearDifference = Math.floor(totalMonths / 12);
+      let leftoverMonths = totalMonths % 12;
+
+      if (leftoverMonths >= 6) {
+        yearDifference += 1; // 半年以上なら繰り上げ
+      }
+
+      document.getElementById("result").textContent =
+        `AさんとBさんの歳の差は ${yearDifference}歳くらいです。`;
+    }
+  </script>
+
+</body>
+</html>
