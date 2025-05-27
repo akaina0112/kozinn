@@ -2,21 +2,40 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<title>歳の差計算ツール（記入式）</title>
+<title>歳の差計算ツール（中央ぞろえ）</title>
 <style>
   body {
     font-family: sans-serif;
     padding: 2em;
     background: #f9f9f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+  .container {
+    background: white;
+    padding: 2em 3em;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    text-align: center;
+    width: 320px;
+  }
+  h1 {
+    margin-bottom: 1.5em;
+    font-size: 1.3rem;
   }
   label {
     display: block;
     margin-top: 1em;
+    text-align: left;
   }
   input {
     font-size: 16px;
     padding: 6px 8px;
-    width: 150px;
+    width: 100%;
+    box-sizing: border-box;
   }
   button {
     margin-top: 1.5em;
@@ -27,6 +46,7 @@
     border: none;
     border-radius: 5px;
     cursor: pointer;
+    width: 100%;
   }
   button:hover {
     background-color: #0056b3;
@@ -40,21 +60,22 @@
 </head>
 <body>
 
-<h1>🧮 歳の差計算ツール（記入方式）</h1>
+<div class="container">
+  <h1>🧮 歳の差計算ツール（記入方式）</h1>
 
-<label for="birth1">Aさんの誕生日（例: 1990/02/06）</label>
-<input type="text" id="birth1" placeholder="YYYY/MM/DD または YYYY-MM-DD" />
+  <label for="birth1">Aさんの誕生日（例: 1990/02/06）</label>
+  <input type="text" id="birth1" placeholder="YYYY/MM/DD または YYYY-MM-DD" />
 
-<label for="birth2">Bさんの誕生日（例: 1995/08/15）</label>
-<input type="text" id="birth2" placeholder="YYYY/MM/DD または YYYY-MM-DD" />
+  <label for="birth2">Bさんの誕生日（例: 1995/08/15）</label>
+  <input type="text" id="birth2" placeholder="YYYY/MM/DD または YYYY-MM-DD" />
 
-<button onclick="calculate()">計算する</button>
+  <button onclick="calculate()">計算する</button>
 
-<div id="result"></div>
+  <div id="result"></div>
+</div>
 
 <script>
 function parseDate(text) {
-  // YYYY/MM/DD または YYYY-MM-DD 形式に対応
   const parts = text.trim().split(/\/|-/);
   if(parts.length !== 3) return null;
   let y = parseInt(parts[0], 10);
