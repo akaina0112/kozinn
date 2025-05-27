@@ -173,12 +173,19 @@
   }
 
   // ✅ 現在のデータをURLとして出力
-  function shareURL() {
-    const data = loadBirthdays();
-    const encoded = encodeURIComponent(JSON.stringify(data));
-    const url = `${location.origin}${location.pathname}?data=${encoded}`;
+function shareURL() {
+  const data = loadBirthdays();
+  const encoded = encodeURIComponent(JSON.stringify(data));
+  const url = `${location.origin}${location.pathname}?data=${encoded}`;
+
+  // クリップボードにコピー
+  navigator.clipboard.writeText(url).then(() => {
+    alert("URLをクリップボードにコピーしました:\n" + url);
+  }).catch(err => {
+    // 失敗した場合はpromptで手動コピーを促す
     prompt("このURLを共有してください:", url);
-  }
+  });
+}
 
   // 📎 共有ボタンを自動追加
   window.addEventListener('DOMContentLoaded', () => {
