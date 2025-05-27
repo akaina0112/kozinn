@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>Bedrock Edition スライムチャンク＆村座標判定</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 700px; margin: 30px auto; background:#111; color:#eee; padding:20px; }
+  input, button { width: 100%; padding: 8px; margin: 8px 0; font-size: 1em; }
+  button { background:#28a745; border:none; color:white; cursor:pointer; }
+  button:hover { background:#1e7e34; }
+  pre { background:#222; padding:10px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+
+<h1>Bedrock Edition スライムチャンク＆村座標判定</h1>
+
+<label>シード値を入力してください（整数）:</label>
+<input type="text" id="seedInput" placeholder="例: 123456789" />
+
+<button onclick="calculate()">判定開始</button>
+
+<h2>結果</h2>
+<pre id="result"></pre>
+
+<script>
+// Bedrock向け簡易ハッシュ関数（Chunkbaseを参考にしたものの簡略化）
+function bedrockHash(seed, x, z) {
+  let val = BigInt(seed);
+  val ^= BigInt(x) * 0x1f1f1f1fn;
+  val ^= BigInt(z) * 0x3f3f3f3fn;
+  val = (val * 0x5DEECE66Dn + 0xBn) & ((1n << 48n) - 1n);
+  return Number(val & 0xffffffffn);
+}
+
+// Bedrock版のスライムチャンク判定（簡易版）
+function isSlimeChunk(seed, chunkX, chunkZ) {
+  const hash = bedrockHash(seed, chunkX, chunkZ);
+  return (hash % 10) === 0;
+}
+
+// Bedrock版の村判定（簡易版）
+function isVillageChunk(seed, chunkX, chunkZ) {
+  const hash = bedrockHash(seed, chunkX, chunkZ);
+  return (hash % 32) === 0;
+}
+
+function calculate() {
+  const seedStr = document.getElementById('seedInput').value.trim();
+  if (!/^-?\d+$/.test(seedStr)) {
+    alert("有効な整数のシード値を入力してください");
+    return;
+  }
+  const seed = BigInt(seedStr);
+
+  const radius = 32; // チャンク範囲（例+-32チャンク）
+  const slimeChunks = [];
+  const villageChunks = [];
+
+  for(let cx = -radius; cx <= radius; cx++) {
+    for(let cz = -radius; cz <= radius; cz++) {
+      if (isSlimeChunk(seed, cx, cz)) {
+        slimeChunks.push({chunkX: cx, chunkZ: cz});
+      }
+      if (isVillageChunk(seed, cx, cz)) {
+        villageChunks.push({chunkX: cx, chunkZ: cz});
+      }
+    }
+  }
+
+  let resultText = `シード値: ${seed}\n\n`;
+
+  resultText += `【スライムチャンク】（チャンク座標 & ブロック座標範囲）\n`;
+  if (slimeChunks.length === 0) {
+    resultText += "なし\n";
+  } else {
+    slimeChunks.forEach(c => {
+      resultText += `チャンク X=${c.chunkX}〜${c.chunkX} (ブロックX=${c.chunkX*16}〜${c.chunkX*16+15}), Z=${c.chunkZ}〜${c.chunkZ} (ブロックZ=${c.chunkZ*16}〜${c.chunkZ*16+15})\n`;
+    });
+  }
+
+  resultText += `\n【村チャンク】（チャンク座標 & ブロック座標範囲）\n`;
+  if (villageChunks.length === 0) {
+    resultText += "なし\n";
+  } else {
+    villageChunks.forEach(c => {
+      resultText += `チャンク X=${c.chunkX}〜${c.chunkX} (ブロックX=${c.chunkX*16}〜${c.chunkX*16+15}), Z=${c.chunkZ}〜${c.chunkZ} (ブロックZ=${c.chunkZ*16}〜${c.chunkZ*16+15})\n`;
+    });
+  }
+
+  document.getElementById('result').innerText = resultText;
+}
+</script>
+
+</body>
+</html>
