@@ -4,92 +4,249 @@
 <meta charset="UTF-8" />
 <title>Bedrock Edition スライムチャンク＆村座標判定</title>
 <style>
-  body { font-family: Arial, sans-serif; max-width: 700px; margin: 30px auto; background:#111; color:#eee; padding:20px; }
-  input, button { width: 100%; padding: 8px; margin: 8px 0; font-size: 1em; }
-  button { background:#28a745; border:none; color:white; cursor:pointer; }
-  button:hover { background:#1e7e34; }
-  pre { background:#222; padding:10px; white-space: pre-wrap; }
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 900px;
+    margin: 30px auto;
+    background:#111; color:#eee;
+    padding: 20px;
+    display: flex;
+    gap: 20px;
+  }
+  #main {
+    flex: 1;
+  }
+  #savedSeeds {
+    width: 220px;
+    background: #222;
+    padding: 10px;
+    border-radius: 6px;
+    overflow-y: auto;
+    max-height: 600px;
+  }
+  input, button {
+    width: 100%;
+    padding: 8px;
+    margin: 8px 0;
+    font-size: 1em;
+    box-sizing: border-box;
+  }
+  button {
+    background:#28a745;
+    border:none;
+    color:white;
+    cursor:pointer;
+    border-radius: 4px;
+  }
+  button:hover {
+    background:#1e7e34;
+  }
+  .seed-btn {
+    background: #444;
+    margin-bottom: 6px;
+    padding: 6px;
+    font-size: 0.9em;
+    border-radius: 4px;
+  }
+  .seed-btn:hover {
+    background: #666;
+  }
+  pre {
+    background:#222;
+    padding:10px;
+    white-space: pre-wrap;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  h2 {
+    margin-top: 0;
+  }
 </style>
 </head>
 <body>
 
-<h1>Bedrock Edition<br>スライムチャンク＆村座標判定</h1>
+<div id="main">
+  <h1>Bedrock Edition スライムチャンク＆村座標判定</h1>
 
-<label>シード値を入力してください（整数）:</label>
-<input type="text" id="seedInput" placeholder="例: 123456789" />
+  <label for="seedInput">シード値を入力してください（整数）:</label>
+  <input type="text" id="seedInput" placeholder="例: 123456789" />
 
-<button onclick="calculate()">判定開始</button>
+  <button id="calcBtn">判定開始</button>
 
-<h2>結果</h2>
-<pre id="result"></pre>
+  <button id="shareBtn" style="background:#007bff; margin-top:0;">保存リスト共有用URLを生成</button>
+
+  <h2>結果</h2>
+  <pre id="result"></pre>
+</div>
+
+<div id="savedSeeds">
+  <h2>保存済みシード</h2>
+  <div id="seedList">（なし）</div>
+</div>
 
 <script>
-// Bedrock向け簡易ハッシュ関数（Chunkbaseを参考にしたものの簡略化）
-function bedrockHash(seed, x, z) {
-  let val = BigInt(seed);
-  val ^= BigInt(x) * 0x1f1f1f1fn;
-  val ^= BigInt(z) * 0x3f3f3f3fn;
-  val = (val * 0x5DEECE66Dn + 0xBn) & ((1n << 48n) - 1n);
-  return Number(val & 0xffffffffn);
-}
+  const seedInput = document.getElementById('seedInput');
+  const result = document.getElementById('result');
+  const seedList = document.getElementById('seedList');
+  const calcBtn = document.getElementById('calcBtn');
+  const shareBtn = document.getElementById('shareBtn');
 
-// Bedrock版のスライムチャンク判定（簡易版）
-function isSlimeChunk(seed, chunkX, chunkZ) {
-  const hash = bedrockHash(seed, chunkX, chunkZ);
-  return (hash % 10) === 0;
-}
-
-// Bedrock版の村判定（簡易版）
-function isVillageChunk(seed, chunkX, chunkZ) {
-  const hash = bedrockHash(seed, chunkX, chunkZ);
-  return (hash % 32) === 0;
-}
-
-function calculate() {
-  const seedStr = document.getElementById('seedInput').value.trim();
-  if (!/^-?\d+$/.test(seedStr)) {
-    alert("有効な整数のシード値を入力してください");
-    return;
+  // 文字列→Base64 エンコード
+  function b64EncodeUnicode(str) {
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+      (match, p1) => String.fromCharCode('0x' + p1)));
   }
-  const seed = BigInt(seedStr);
+  // Base64→文字列 デコード
+  function b64DecodeUnicode(str) {
+    return decodeURIComponent(atob(str).split('').map(c =>
+      '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+  }
 
-  const radius = 32; // チャンク範囲（例+-32チャンク）
-  const slimeChunks = [];
-  const villageChunks = [];
+  // --- Bedrock向け簡易ハッシュ関数 ---
+  function bedrockHash(seed, x, z) {
+    let val = BigInt(seed);
+    val ^= BigInt(x) * 0x1f1f1f1fn;
+    val ^= BigInt(z) * 0x3f3f3f3fn;
+    val = (val * 0x5DEECE66Dn + 0xBn) & ((1n << 48n) - 1n);
+    return Number(val & 0xffffffffn);
+  }
 
-  for(let cx = -radius; cx <= radius; cx++) {
-    for(let cz = -radius; cz <= radius; cz++) {
-      if (isSlimeChunk(seed, cx, cz)) {
-        slimeChunks.push({chunkX: cx, chunkZ: cz});
+  // --- スライムチャンク判定 ---
+  function isSlimeChunk(seed, chunkX, chunkZ) {
+    const hash = bedrockHash(seed, chunkX, chunkZ);
+    return (hash % 10) === 0;
+  }
+
+  // --- 村チャンク判定 ---
+  function isVillageChunk(seed, chunkX, chunkZ) {
+    const hash = bedrockHash(seed, chunkX, chunkZ);
+    return (hash % 32) === 0;
+  }
+
+  // --- 判定関数 ---
+  function calculate() {
+    const seedStr = seedInput.value.trim();
+    if (!/^-?\d+$/.test(seedStr)) {
+      alert("有効な整数のシード値を入力してください");
+      return;
+    }
+    const seed = BigInt(seedStr);
+
+    // シードを保存
+    saveSeed(seedStr);
+
+    const radius = 32;
+    const slimeChunks = [];
+    const villageChunks = [];
+
+    for(let cx = -radius; cx <= radius; cx++) {
+      for(let cz = -radius; cz <= radius; cz++) {
+        if (isSlimeChunk(seed, cx, cz)) {
+          slimeChunks.push({chunkX: cx, chunkZ: cz});
+        }
+        if (isVillageChunk(seed, cx, cz)) {
+          villageChunks.push({chunkX: cx, chunkZ: cz});
+        }
       }
-      if (isVillageChunk(seed, cx, cz)) {
-        villageChunks.push({chunkX: cx, chunkZ: cz});
-      }
+    }
+
+    let resultText = `シード値: ${seed}\n\n`;
+
+    resultText += `【スライムチャンク】（チャンク座標 & ブロック座標範囲）\n`;
+    if (slimeChunks.length === 0) {
+      resultText += "なし\n";
+    } else {
+      slimeChunks.forEach(c => {
+        resultText += `チャンク X=${c.chunkX} (ブロックX=${c.chunkX*16}〜${c.chunkX*16+15}), Z=${c.chunkZ} (ブロックZ=${c.chunkZ*16}〜${c.chunkZ*16+15})\n`;
+      });
+    }
+
+    resultText += `\n【村チャンク】（チャンク座標 & ブロック座標範囲）\n`;
+    if (villageChunks.length === 0) {
+      resultText += "なし\n";
+    } else {
+      villageChunks.forEach(c => {
+        resultText += `チャンク X=${c.chunkX} (ブロックX=${c.chunkX*16}〜${c.chunkX*16+15}), Z=${c.chunkZ} (ブロックZ=${c.chunkZ*16}〜${c.chunkZ*16+15})\n`;
+      });
+    }
+
+    result.innerText = resultText;
+    renderSeedList();
+  }
+
+  // 保存済みシードをlocalStorageに保存
+  function saveSeed(seed) {
+    let seeds = JSON.parse(localStorage.getItem('savedSeeds') || '[]');
+    if (!seeds.includes(seed)) {
+      seeds.push(seed);
+      localStorage.setItem('savedSeeds', JSON.stringify(seeds));
     }
   }
 
-  let resultText = `シード値: ${seed}\n\n`;
-
-  resultText += `【スライムチャンク】（チャンク座標 & ブロック座標範囲）\n`;
-  if (slimeChunks.length === 0) {
-    resultText += "なし\n";
-  } else {
-    slimeChunks.forEach(c => {
-      resultText += `チャンク X=${c.chunkX}〜${c.chunkX} (ブロックX=${c.chunkX*16}〜${c.chunkX*16+15}), Z=${c.chunkZ}〜${c.chunkZ} (ブロックZ=${c.chunkZ*16}〜${c.chunkZ*16+15})\n`;
+  // 保存済みシードを表示
+  function renderSeedList() {
+    let seeds = JSON.parse(localStorage.getItem('savedSeeds') || '[]');
+    if (seeds.length === 0) {
+      seedList.innerHTML = '（なし）';
+      return;
+    }
+    seedList.innerHTML = '';
+    seeds.forEach(seed => {
+      const btn = document.createElement('button');
+      btn.className = 'seed-btn';
+      btn.textContent = seed;
+      btn.title = 'クリックで入力欄にセット';
+      btn.onclick = () => {
+        seedInput.value = seed;
+        calculate();
+      };
+      seedList.appendChild(btn);
     });
   }
 
-  resultText += `\n【村チャンク】（チャンク座標 & ブロック座標範囲）\n`;
-  if (villageChunks.length === 0) {
-    resultText += "なし\n";
-  } else {
-    villageChunks.forEach(c => {
-      resultText += `チャンク X=${c.chunkX}〜${c.chunkX} (ブロックX=${c.chunkX*16}〜${c.chunkX*16+15}), Z=${c.chunkZ}〜${c.chunkZ} (ブロックZ=${c.chunkZ*16}〜${c.chunkZ*16+15})\n`;
+  // 共有ボタンで保存リスト全部をURLにエンコードしてコピー
+  shareBtn.onclick = () => {
+    let seeds = JSON.parse(localStorage.getItem('savedSeeds') || '[]');
+    if (seeds.length === 0) {
+      alert("保存されたシードがありません");
+      return;
+    }
+    // JSON文字列をBase64にエンコード
+    const encoded = b64EncodeUnicode(JSON.stringify(seeds));
+    const url = new URL(window.location);
+    url.searchParams.set('saved', encoded);
+    navigator.clipboard.writeText(url.toString()).then(() => {
+      alert('保存されたシード一覧の共有URLをコピーしました:\n' + url);
     });
-  }
+  };
 
-  document.getElementById('result').innerText = resultText;
-}
+  // ページ読み込み時にsavedパラメータがあれば復元して保存＆表示
+  window.onload = () => {
+    const params = new URLSearchParams(window.location.search);
+    const savedParam = params.get('saved');
+    if (savedParam) {
+      try {
+        const decoded = b64DecodeUnicode(savedParam);
+        const seedsFromUrl = JSON.parse(decoded);
+        if (Array.isArray(seedsFromUrl)) {
+          localStorage.setItem('savedSeeds', JSON.stringify(seedsFromUrl));
+        }
+      } catch(e) {
+        console.warn('保存リストの復元に失敗:', e);
+      }
+    }
+    renderSeedList();
+
+    // URLパラメータからシードをセット＆判定
+    const seedParam = params.get('seed');
+    if (seedParam && /^-?\d+$/.test(seedParam)) {
+      seedInput.value = seedParam;
+      calculate();
+    }
+  };
+
+  // ボタンで判定
+  calcBtn.onclick = calculate;
 </script>
 
 </body>
