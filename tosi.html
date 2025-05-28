@@ -77,7 +77,7 @@
 <script>
 // 日付文字列をDateに変換する（例：'1990/02/06' → Dateオブジェクト）
 function parseDate(str) {
-  const parts = str.split('/');
+  const parts = str.split(/[-\/]/);
   if(parts.length !== 3) return null;
   return new Date(parts[0], parts[1] - 1, parts[2]);
 }
