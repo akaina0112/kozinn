@@ -1,0 +1,16 @@
+[
+  {
+    "id": "gote-supporter",
+    "name": "Gote Supporter",
+    "description": "HUD・設定画面・チャットなどを改良するUIアドオンです。",
+    "repo": "YuuhaLand/Gote-Supporter",
+    "image": "assets/gote-supporter.png"
+  },
+  {
+    "id": "custom-bossbar",
+    "name": "Custom Bossbar Addon",
+    "description": "自作スコアをボスバーに表示できる拡張アドオン。",
+    "repo": "YuuhaLand/Custom-bossbar-addon",
+    "image": "assets/custom-bossbar.png"
+  }
+]

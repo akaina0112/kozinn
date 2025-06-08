@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Minecraft アドオン紹介</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f2f2f2;
+      color: #333;
+      margin: 0;
+      padding: 1rem;
+    }
+
+    header, footer {
+      text-align: center;
+      padding: 1rem;
+      background: #444;
+      color: white;
+    }
+
+    #addon-list {
+      display: grid;
+      gap: 1.5rem;
+      padding: 1rem;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .addon-card {
+      background: white;
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .addon-card img {
+      max-width: 100%;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎮 Minecraft アドオン紹介</h1>
+  </header>
+  <main id="addon-list">
+    <p>読み込み中...</p>
+  </main>
+  <footer>
+    <p>&copy; 2025 あなたの名前</p>
+  </footer>
+<script>
+  fetch('data/addons.json')
+    .then(res => res.json())
+    .then(addons => {
+      const container = document.getElementById('addon-list');
+      container.innerHTML = '';
+      addons.forEach(addon => {
+        const card = document.createElement('div');
+        card.className = 'addon-card';
+        card.innerHTML = `
+          <h2>${addon.name}</h2>
+          <img src="${addon.image}" alt="${addon.name}">
+          <p>${addon.description}</p>
+          <p>📁 <a href="${addon.repo}" target="_blank">download</a></p>
+        `;
+        container.appendChild(card);
+      });
+    })
+    .catch(() => {
+      document.getElementById('addon-list').innerHTML = '<p>読み込みに失敗しました。</p>';
+    });
+</script>
+</body>
+</html>
