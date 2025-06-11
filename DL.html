@@ -7,42 +7,48 @@
   <style>
     body {
       display: flex;
-      height: 100vh;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
+      min-height: 100vh;
       background-color: #f0f0f0;
       margin: 0;
       font-family: sans-serif;
     }
-    button {
+    .download-button {
+      display: inline-block;
+      margin: 10px;
       padding: 1em 2em;
       font-size: 1.2em;
-      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
       background-color: #0078d7;
-      border: none;
       color: white;
       border-radius: 6px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
       transition: background-color 0.3s ease;
     }
-    button:hover {
+    .download-button:hover {
       background-color: #005a9e;
     }
   </style>
 </head>
 <body>
 
-  <!-- ダウンロードボタン -->
-  <a href="./fill/pack_icon.zip.mcpzck" download>
-    <button>pack_icon.zip.mcpzckダウンロード</button>
-  </a><br>
-  <!-- ダウンロードボタン -->
-  <a href="./fill/pack_icon.mcpack" download>
-    <br><button>pack_icon.mcpackダウンロード</button>
-    </a><br>
-  <!-- ダウンロードボタン -->
-  <a href="./fill/manifest.mcpack" download>
-    <br><button>manifest.mcpackダウンロード</button>
+  <a href="./fill/pack_icon.zip.mcpzck" download class="download-button">
+    pack_icon.zip.mcpzckダウンロード
+  </a>
+
+  <a href="./fill/pack_icon.mcpack" download class="download-button">
+    pack_icon.mcpackダウンロード
+  </a>
+
+  <a href="./fill/manifest.mcpack" download class="download-button">
+    manifest.mcpackダウンロード
+  </a>
+
+  <a href="./fill/manifest2.mcpack" download class="download-button">
+    manifest2.mcpackダウンロード
   </a>
 
 </body>
