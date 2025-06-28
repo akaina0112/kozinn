@@ -1,67 +1,86 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>JavaScript 難読化ツール（文字列はそのまま）</title>
-  <style>
-    body { font-family: sans-serif; background: #1e1e1e; color: #eee; padding: 20px; }
-    textarea { width: 100%; height: 200px; background: #2e2e2e; color: #00ff99; padding: 10px; font-family: monospace; }
-    button { margin: 10px 5px; padding: 10px 20px; background: #00aaff; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    button:hover { background: #0077cc; }
-  </style>
+<meta charset="UTF-8" />
+<title>JS 高度難読化ツール（_0x**** 関数付き）</title>
+<style>
+  body { background: #121212; color: #eee; font-family: monospace; padding: 1rem; }
+  textarea { width: 100%; height: 260px; background: #222; color: #0f0; padding: 0.6rem; font-size: 14px; border-radius: 5px; border: none; resize: vertical; }
+  button { margin: 1rem 0.25rem 1rem 0; padding: 0.5rem 1rem; background: #08f; border: none; border-radius: 5px; color: white; cursor: pointer; }
+  button:hover { background: #005bbb; }
+  h1 { margin-bottom: 0.5rem; }
+</style>
 </head>
 <body>
-  <h1>JavaScript 難読化ツール（囲まれた文字列は保持）</h1>
 
-  <p>🔹 <strong>「"set"」「'get'」「`Hello`」など囲まれた文字列リテラルは変えません。</strong></p>
+<h1>JS 高度難読化ツール（_0x**** 関数付き）</h1>
+<p>※ <code>import { world } from '@minecraft/server'</code> はそのまま保持し、難読化部分は _0x**** 形式＋復号ループ付きにします。</p>
 
-  <h3>JavaScriptコードを入力：</h3>
-  <textarea id="inputCode">
-// IMPORT_START
+<textarea id="inputCode">// IMPORT_START
 import { world } from '@minecraft/server';
 // IMPORT_END
 
 // MAIN_START
-world.beforeEvents.playerJoin.subscribe(ev => {
-  const action = "set";
-  const label = 'get';
-  ev.player.sendMessage("ようこそ！");
+world.beforeEvents.playerInteractWithBlock.subscribe(ev => {
+  const sign = ev.block.getComponent("sign");
+  if (!sign) return;
+  const text = sign.getText(SignSide.front).split('\n')[0];
+  if (!text.startsWith('/')) return;
+  system.run(() => {
+    try {
+      ev.player.runCommand(text);
+    } catch(e) {
+      if (e instanceof CommandError) {
+        ev.player.sendMessage('§c' + e.message);
+      }
+    }
+  });
 });
 // MAIN_END
 </textarea>
 
-  <div>
-    <button onclick="obfuscateCode()">🔐 難読化</button>
-  </div>
+<button onclick="obfuscate()">🔐 難読化開始</button>
 
-  <h3>出力コード：</h3>
-  <textarea id="outputCode" readonly></textarea>
+<h2>難読化コード</h2>
+<textarea id="outputCode" readonly></textarea>
 
-  <script src="https://cdn.jsdelivr.net/npm/javascript-obfuscator/dist/index.browser.js"></script>
-  <script>
-    function obfuscateCode() {
-      const input = document.getElementById('inputCode').value;
+<script src="https://cdn.jsdelivr.net/npm/javascript-obfuscator/dist/index.browser.js"></script>
+<script>
+function obfuscate() {
+  const input = document.getElementById('inputCode').value;
 
-      const importPart = input.match(/\/\/ IMPORT_START([\s\S]*?)\/\/ IMPORT_END/);
-      const mainPart = input.match(/\/\/ MAIN_START([\s\S]*?)\/\/ MAIN_END/);
+  const importMatch = input.match(/\/\/ IMPORT_START([\s\S]*?)\/\/ IMPORT_END/);
+  const mainMatch = input.match(/\/\/ MAIN_START([\s\S]*?)\/\/ MAIN_END/);
 
-      if (!mainPart) return alert("MAIN部分が見つかりません。コメントを確認してください。");
+  if (!mainMatch) {
+    alert('MAIN_START と MAIN_END の間にコードを入力してください。');
+    return;
+  }
 
-      const obfuscated = JavaScriptObfuscator.obfuscate(mainPart[1], {
-        compact: false,
-        controlFlowFlattening: false,
-        stringArray: false, // 🔴←これが重要：文字列をそのまま残す
-        renameGlobals: false,
-        identifierNamesGenerator: 'mangled', // 短くするだけ
-      }).getObfuscatedCode();
+  const importPart = importMatch ? importMatch[1].trim() : '';
+  const mainPart = mainMatch[1].trim();
 
-      const output =
-        (importPart ? importPart[1] : '') +
-        '\n\n// === 難読化コード ===\n' +
-        obfuscated;
+  const obfuscated = JavaScriptObfuscator.obfuscate(mainPart, {
+    compact: true,
+    controlFlowFlattening: true,
+    controlFlowFlatteningThreshold: 1.0,
+    deadCodeInjection: true,
+    deadCodeInjectionThreshold: 1.0,
+    debugProtection: false,
+    debugProtectionInterval: false,
+    disableConsoleOutput: true,
+    identifierNamesGenerator: 'hexadecimal',
+    stringArray: true,
+    stringArrayEncoding: ['rc4'],
+    stringArrayThreshold: 1.0,
+    renameGlobals: false,
+    transformObjectKeys: true,
+  }).getObfuscatedCode();
 
-      document.getElementById('outputCode').value = output;
-    }
-  </script>
+  const output = importPart + '\n\n// === 難読化コード ===\n' + obfuscated;
+  document.getElementById('outputCode').value = output;
+}
+</script>
+
 </body>
 </html>
