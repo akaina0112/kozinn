@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>文字列 → \\uXXXX エスケープ変換ツール</title>
+  <title>文字列 ↔ \\uXXXX エスケープ変換ツール</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -27,6 +27,7 @@
       color: white;
       border: none;
       border-radius: 5px;
+      margin-right: 10px;
     }
     .result {
       margin-top: 20px;
@@ -42,26 +43,37 @@
 </head>
 <body>
 
-  <h1>文字列 → \\uXXXX エスケープ変換ツール</h1>
-  <p>入力した文字列を <code>\\uXXXX</code> 形式（バックスラッシュ2つ）に変換します。</p>
+  <h1>文字列 ↔ \\uXXXX エスケープ変換ツール</h1>
+  <p>文字列を <code>\\uXXXX</code> 形式に変換、または元に戻します。</p>
 
-  <textarea id="inputText" placeholder="ここに通常の文字列を入力してください"></textarea>
-  <button id="encodeBtn">変換する</button>
+  <textarea id="inputText" placeholder="ここに文字列またはエスケープ文字列を入力してください"></textarea>
+  <div>
+    <button id="encodeBtn">変換する</button>
+    <button id="decodeBtn">復元する</button>
+  </div>
 
-  <h2>変換結果</h2>
+  <h2>結果</h2>
   <div class="result" id="resultArea"></div>
 
   <script>
-    // 文字列を \\uXXXX 形式（バックスラッシュ2つ）に変換する関数
+    // エンコード：文字列 → \\uXXXX
     function encodeToDoubleBackslashUnicode(str) {
       return str.split('').map(c =>
         '\\\\u' + c.charCodeAt(0).toString(16).padStart(4, '0')
       ).join('');
     }
 
+    // デコード：\\uXXXX → 文字列
+    function decodeFromDoubleBackslashUnicode(str) {
+      return str.replace(/\\\\u([0-9a-fA-F]{4})/g, (_, hex) =>
+        String.fromCharCode(parseInt(hex, 16))
+      );
+    }
+
     const inputText = document.getElementById('inputText');
-    const encodeBtn = document.getElementById('encodeBtn');
     const resultArea = document.getElementById('resultArea');
+    const encodeBtn = document.getElementById('encodeBtn');
+    const decodeBtn = document.getElementById('decodeBtn');
 
     encodeBtn.addEventListener('click', () => {
       const raw = inputText.value;
@@ -74,6 +86,20 @@
         resultArea.textContent = encoded;
       } catch (e) {
         resultArea.textContent = "変換中にエラーが発生しました。";
+      }
+    });
+
+    decodeBtn.addEventListener('click', () => {
+      const raw = inputText.value;
+      if (!raw) {
+        resultArea.textContent = "入力が空です。復元対象の文字列を入力してください。";
+        return;
+      }
+      try {
+        const decoded = decodeFromDoubleBackslashUnicode(raw);
+        resultArea.textContent = decoded;
+      } catch (e) {
+        resultArea.textContent = "復元中にエラーが発生しました。";
       }
     });
   </script>
