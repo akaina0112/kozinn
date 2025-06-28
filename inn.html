@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>JavaScript 難読化ツール（文字列はそのまま）</title>
+  <style>
+    body { font-family: sans-serif; background: #1e1e1e; color: #eee; padding: 20px; }
+    textarea { width: 100%; height: 200px; background: #2e2e2e; color: #00ff99; padding: 10px; font-family: monospace; }
+    button { margin: 10px 5px; padding: 10px 20px; background: #00aaff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #0077cc; }
+  </style>
+</head>
+<body>
+  <h1>JavaScript 難読化ツール（囲まれた文字列は保持）</h1>
+
+  <p>🔹 <strong>「"set"」「'get'」「`Hello`」など囲まれた文字列リテラルは変えません。</strong></p>
+
+  <h3>JavaScriptコードを入力：</h3>
+  <textarea id="inputCode">
+// IMPORT_START
+import { world } from '@minecraft/server';
+// IMPORT_END
+
+// MAIN_START
+world.beforeEvents.playerJoin.subscribe(ev => {
+  const action = "set";
+  const label = 'get';
+  ev.player.sendMessage("ようこそ！");
+});
+// MAIN_END
+</textarea>
+
+  <div>
+    <button onclick="obfuscateCode()">🔐 難読化</button>
+  </div>
+
+  <h3>出力コード：</h3>
+  <textarea id="outputCode" readonly></textarea>
+
+  <script src="https://cdn.jsdelivr.net/npm/javascript-obfuscator/dist/index.browser.js"></script>
+  <script>
+    function obfuscateCode() {
+      const input = document.getElementById('inputCode').value;
+
+      const importPart = input.match(/\/\/ IMPORT_START([\s\S]*?)\/\/ IMPORT_END/);
+      const mainPart = input.match(/\/\/ MAIN_START([\s\S]*?)\/\/ MAIN_END/);
+
+      if (!mainPart) return alert("MAIN部分が見つかりません。コメントを確認してください。");
+
+      const obfuscated = JavaScriptObfuscator.obfuscate(mainPart[1], {
+        compact: false,
+        controlFlowFlattening: false,
+        stringArray: false, // 🔴←これが重要：文字列をそのまま残す
+        renameGlobals: false,
+        identifierNamesGenerator: 'mangled', // 短くするだけ
+      }).getObfuscatedCode();
+
+      const output =
+        (importPart ? importPart[1] : '') +
+        '\n\n// === 難読化コード ===\n' +
+        obfuscated;
+
+      document.getElementById('outputCode').value = output;
+    }
+  </script>
+</body>
+</html>
