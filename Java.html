@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>mcpack 自動生成ツール</title>
+</head>
+<body>
+  <h1>📦 .mcpack ジェネレーター</h1>
+  <label>index.js のコードを入力:</label><br>
+  <textarea id="jsInput" rows="10" cols="50">// ここにスクリプトを書いてください</textarea><br><br>
+  <button onclick="generatePack()">✅ ダウンロード .mcpack</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <script>
+    function generateUUID() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
+    function getPackNumber() {
+      const key = "packCount";
+      const count = parseInt(localStorage.getItem(key) || "1");
+      localStorage.setItem(key, count + 1);
+      return count;
+    }
+
+    async function generatePack() {
+      const jsCode = document.getElementById("jsInput").value;
+      const zip = new JSZip();
+
+      const packNum = getPackNumber();
+      const name = `テスト${packNum}`;
+      const uuid1 = generateUUID();
+      const uuid2 = generateUUID();
+      const uuid3 = generateUUID();
+
+      const manifest = {
+        "format_version": 2,
+        "header": {
+          "name": name,
+          "description": "pack.description",
+          "uuid": uuid1,
+          "version": [2, 0, 0],
+          "min_engine_version": [1, 18, 0]
+        },
+        "modules": [
+          {
+            "type": "script",
+            "description": "behavior module",
+            "uuid": uuid2,
+            "version": [2, 0, 0],
+            "language": "javascript",
+            "entry": "scripts/index.js"
+          },
+          {
+            "description": "縺ゅ≠縺ゅ≠縺ゅ≠\n by 縺ゅ≠",
+            "type": "data",
+            "uuid": uuid3,
+            "version": [2, 0, 0]
+          }
+        ],
+        "dependencies": [
+          {
+            "module_name": "@minecraft/server",
+            "version": "1.18.0"
+          },
+          {
+            "module_name": "@minecraft/server-ui",
+            "version": "1.3.0"
+          }
+        ]
+      };
+
+      zip.file("manifest.json", JSON.stringify(manifest, null, 2));
+      zip.file("scripts/index.js", jsCode);
+
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, `${name}.mcpack`);
+    }
+  </script>
+</body>
+</html>
