@@ -3,728 +3,204 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>大切な日 - 衛星マップ対応</title>
+  <title>危険区域モニタ - PWA通知対応</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4CAF50">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      color: #333;
       padding: 20px;
+      background-color: #f9f9f9;
     }
-
-    #map {
-      height: 400px;
-      width: 100%;
-    }
-
-    .form-container {
-      background-color: #ffffff;
+    #map { height: 400px; width: 100%; margin-top: 20px; }
+    .form-container, .distance-container {
+      background: #fff;
       padding: 15px;
+      margin-top: 20px;
       border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      margin-top: 20px;
-      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
-
-    .form-container input, .form-container button {
-      width: 100%;
-      margin: 5px 0;
-      padding: 10px;
-      font-size: 16px;
-    }
-
-    .form-container button {
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-
-    .form-container button:hover {
-      background-color: #45a049;
-    }
-
-    h1, h2 {
-      color: #333;
-    }
-
-    p {
-      font-size: 16px;
-      margin: 5px 0;
-    }
-
-    #daysSinceStart, #daysUntilBirthday {
-      font-size: 18px;
-      font-weight: bold;
-    }
-
-    .danger-zone-list {
-      margin-top: 20px;
-    }
-
     .danger-zone-item {
-      background-color: #ffcccc;
+      background: #ffe6e6;
       padding: 10px;
       margin: 5px 0;
       border-radius: 5px;
       display: flex;
       justify-content: space-between;
     }
-
     .danger-zone-item button {
-      background-color: #ff0000;
-      color: white;
+      background: red;
+      color: #fff;
       border: none;
+      border-radius: 3px;
       cursor: pointer;
     }
-
     .danger-zone-item button:hover {
-      background-color: #cc0000;
-    }
-
-    .preview-container {
-      background-color: #ffffff;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      margin-top: 20px;
-      margin-bottom: 20px;
-    }
-
-    .preview-item {
-      margin: 10px 0;
-      padding: 10px;
-      background-color: #f8f9fa;
-      border-radius: 5px;
-    }
-
-    .preview-label {
-      font-weight: bold;
-      color: #333;
-    }
-
-    .preview-value {
-      color: #007bff;
-    }
-
-    .settings-button {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 10px 20px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      z-index: 1000;
-    }
-
-    .settings-button:hover {
-      background-color: #45a049;
-    }
-
-    .settings-screen {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      z-index: 1001;
-    }
-
-    .settings-content {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: white;
-      padding: 20px;
-      border-radius: 8px;
-      width: 80%;
-      max-width: 500px;
-      max-height: 80vh;
-      overflow-y: auto;
-    }
-
-    .close-settings {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      font-size: 24px;
-      cursor: pointer;
-    }
-
-    .settings-tabs {
-      display: flex;
-      margin-bottom: 20px;
-      border-bottom: 1px solid #ddd;
-    }
-
-    .settings-tab {
-      padding: 10px 20px;
-      cursor: pointer;
-      border: none;
-      background: none;
-      font-size: 16px;
-    }
-
-    .settings-tab.active {
-      border-bottom: 2px solid #4CAF50;
-      color: #4CAF50;
-    }
-
-    .settings-tab-content {
-      display: none;
-    }
-
-    .settings-tab-content.active {
-      display: block;
-    }
-
-    .danger-zone-distance {
-      margin-top: 20px;
-      padding: 10px;
-      background-color: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .danger-zone-distance-item {
-      margin: 10px 0;
-      padding: 10px;
-      background-color: #f8f9fa;
-      border-radius: 5px;
-      transition: all 0.3s ease;
-    }
-
-    .distance-value {
-      display: inline-block;
-      min-width: 100px;
-      text-align: right;
-    }
-
-    .distance-updating {
-      opacity: 0.5;
-    }
-
-    .map-container {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      z-index: 1002;
-    }
-
-    .map-content {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 90%;
-      height: 80%;
-      background-color: white;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .close-map {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background-color: white;
-      padding: 5px 10px;
-      border-radius: 5px;
-      cursor: pointer;
-      z-index: 1000;
-    }
-
-    .view-toggle {
-      display: flex;
-      justify-content: center;
-      margin: 20px 0;
-    }
-
-    .view-toggle button {
-      padding: 10px 20px;
-      margin: 0 10px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      background-color: #f0f0f0;
-      transition: background-color 0.3s;
-    }
-
-    .view-toggle button.active {
-      background-color: #4CAF50;
-      color: white;
-    }
-
-    .view-content {
-      display: none;
-    }
-
-    .view-content.active {
-      display: block;
-    }
-
-    @media (max-width: 768px) {
-      .settings-content {
-        width: 95%;
-        max-width: none;
-      }
-
-      .preview-container {
-        margin: 10px;
-      }
-
-      .form-container {
-        margin: 10px;
-      }
-
-      .settings-button {
-        padding: 8px 16px;
-        font-size: 14px;
-      }
+      background: darkred;
     }
   </style>
-  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 </head>
 <body>
-  <button class="settings-button" onclick="openSettings()">設定</button>
+  <h1>危険区域モニタ</h1>
 
-  <div class="settings-screen" id="settingsScreen">
-    <div class="settings-content">
-      <span class="close-settings" onclick="closeSettings()">&times;</span>
-      <h2>設定</h2>
-      
-      <div class="settings-tabs">
-        <button class="settings-tab active" onclick="switchTab('dates')">日付設定</button>
-        <button class="settings-tab" onclick="switchTab('dangerZones')">危険区域管理</button>
-      </div>
-
-      <div id="datesTab" class="settings-tab-content active">
-        <div class="form-container">
-          <label for="coupleDate">付き合い始めた日</label>
-          <input type="date" id="coupleDate">
-          <label for="birthdayDate">誕生日</label>
-          <input type="date" id="birthdayDate">
-          <label for="birthdayDate">出会った日</label>
-          <input type="date" id="birthdayDate2">
-          <label for="birthdayDate">親密</label>
-          <input type="date" id="birthdayDate3">
-          <button onclick="saveDates()">設定を保存</button>
-        </div>
-      </div>
-
-      <div id="dangerZonesTab" class="settings-tab-content">
-        <div class="form-container">
-          <button onclick="addDangerZonePrompt()">危険区域を追加</button>
-          <div id="dangerZoneList" class="danger-zone-list"></div>
-        </div>
-      </div>
-    </div>
+  <div class="form-container">
+    <button onclick="addDangerZone()">危険区域を追加</button>
+    <div id="dangerZoneList"></div>
   </div>
 
-  <div class="map-container" id="mapContainer">
-    <div class="map-content">
-      <div class="close-map" onclick="closeMap()">&times;</div>
-      <div id="map"></div>
-    </div>
+  <div class="distance-container">
+    <h2>現在地からの距離</h2>
+    <div id="distanceList"></div>
   </div>
 
-  <h1>大切な日アプリ</h1>
-
-  <div class="view-toggle">
-    <button id="datesViewBtn" class="active" onclick="switchView('dates')">大切な日</button>
-    <button id="dangerZonesViewBtn" onclick="switchView('dangerZones')">危険区域</button>
-  </div>
-
-  <div id="datesView" class="view-content active">
-    <div class="preview-container">
-      <h2>プレビュー</h2>
-      <div class="preview-item">
-        <span class="preview-label">付き合い始めた日:</span>
-        <span class="preview-value" id="previewCoupleDate">未設定</span>
-      </div>
-      <div class="preview-item">
-        <span class="preview-label">出会った日:</span>
-        <span class="preview-value" id="previewCoupleDate2">未設定</span>
-      </div>
-      <div class="preview-item">
-        <span class="preview-label">誕生日:</span>
-        <span class="preview-value" id="previewBirthdayDate">未設定</span>
-      </div>
-      <div class="preview-item">
-        <span class="preview-label">経過日数:</span>
-        <span class="preview-value" id="previewDaysSinceStart">-</span>
-      </div>
-      <div class="preview-item">
-        <span class="preview-label">誕生日までの日数:</span>
-        <span class="preview-value" id="previewDaysUntilBirthday">-</span>
-      </div>
-      <div class="preview-item">
-        <span class="preview-label">現在の年齢:</span>
-        <span class="preview-value" id="previewCurrentAge">-</span>
-      </div>
-      <div class="preview-item">
-        <span class="preview-label">今年で年齢:</span>
-        <span class="preview-value" id="previewSchoolGrade">-</span>
-      </div>
-      <div class="preview-item">
-        <span class="preview-label">親密度:</span>
-        <span class="preview-value" id="previewSchoolGrade2">-</span>
-      </div>
-    </div>
-  </div>
-
-  <div id="dangerZonesView" class="view-content">
-    <div class="danger-zone-distance" id="dangerZoneDistance">
-      <h2>危険区域までの距離</h2>
-      <div id="dangerZoneDistanceList"></div>
-    </div>
-  </div>
+  <div id="map"></div>
 
   <script>
-    let coupleDate = localStorage.getItem('coupleDate2') || '';
-    let birthdayDate = localStorage.getItem('birthdayDate2') || '';
-    let birthdayDate2 = localStorage.getItem('birthdayDate3') || '';
-    let birthdayDate3 = localStorage.getItem('birthdayDate4') || '';
-    let dangerZones = JSON.parse(localStorage.getItem('dangerZones') || '[]');
-    let currentView = localStorage.getItem('currentView') || 'dates';
-    let map;
-    let watchId = null;
+    let dangerZones = JSON.parse(localStorage.getItem("dangerZones") || "[]");
+    let map, watchId = null;
     let notificationPermission = false;
 
-    // 通知の許可をリクエスト
+    // 通知の許可確認
     async function requestNotificationPermission() {
-      if ('Notification' in window) {
+      if ("Notification" in window) {
         try {
-          const permission = await Notification.requestPermission();
-          notificationPermission = permission === 'granted';
-        } catch (error) {
-          console.error('Notification permission error:', error);
+          const result = await Notification.requestPermission();
+          notificationPermission = result === "granted";
+        } catch (e) {
+          console.error("通知許可リクエスト失敗:", e);
         }
       }
     }
 
-    // 危険区域チェック
-    function checkDangerZone(lat, lng) {
-      for (const zone of dangerZones) {
-        const distance = calculateDistance(lat, lng, zone.lat, zone.lng);
-        if (distance <= zone.radius) {
-          showAlert();
-          return true;
-        }
+    // 通知を送信
+    function sendNotification(title, body) {
+      if (notificationPermission && "Notification" in window) {
+        new Notification(title, {
+          body: body,
+          icon: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+        });
+      } else {
+        alert("⚠️ " + body); // 通知が使えない場合のフォールバック
       }
-      return false;
     }
 
-    // 2点間の距離を計算（メートル）
-    function calculateDistance(lat1, lng1, lat2, lng2) {
-      const R = 6371000; // 地球の半径（メートル）
+    // 距離を計算（メートル）
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const toRad = d => d * Math.PI / 180;
       const dLat = toRad(lat2 - lat1);
-      const dLng = toRad(lng2 - lng1);
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * 
-                Math.sin(dLng/2) * Math.sin(dLng/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       return R * c;
     }
 
-    function toRad(degrees) {
-      return degrees * Math.PI / 180;
-    }
-
-    // アラートを表示
-    function showAlert() {
-      // 音声アラート
-      const alertSound = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU1vT18=');
-      alertSound.play();
-
-      // 通知
-      if (notificationPermission) {
-        new Notification('危険区域に入りました！', {
-          body: '危険区域に入りました。注意してください。',
-          icon: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
-          vibrate: [100, 50, 100]
-        });
+    // 危険区域に入ったかチェック
+    function checkDanger(lat, lon) {
+      for (const zone of dangerZones) {
+        const d = calculateDistance(lat, lon, zone.lat, zone.lng);
+        if (d <= zone.radius) {
+          sendNotification("危険区域に入りました", "現在位置が危険区域内にあります。");
+          return;
+        }
       }
     }
 
-    // 位置情報の監視を開始
-    function startLocationWatch() {
-      if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId);
-      }
-
-      const options = {
-        enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 0
-      };
-
-      watchId = navigator.geolocation.watchPosition(
-        position => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          checkDangerZone(lat, lng);
-        },
-        error => {
-          console.error('位置情報の取得に失敗しました:', error);
-          if (error.code === error.PERMISSION_DENIED) {
-            alert('位置情報の使用が許可されていません。設定から許可してください。');
-          }
-        },
-        options
-      );
-    }
-
-    document.getElementById('coupleDate').value = coupleDate;
-    document.getElementById('birthdayDate').value = birthdayDate;
-    document.getElementById('birthdayDate2').value = birthdayDate2;
-    document.getElementById('birthdayDate3').value = birthdayDate3;
-
-    function openSettings() {
-      document.getElementById('settingsScreen').style.display = 'block';
-    }
-
-    function closeSettings() {
-      document.getElementById('settingsScreen').style.display = 'none';
-    }
-
-    function saveDates() {
-      coupleDate = document.getElementById('coupleDate').value;
-      birthdayDate = document.getElementById('birthdayDate').value;
-      birthdayDate2 = document.getElementById('birthdayDate2').value;
-      birthdayDate3 = document.getElementById('birthdayDate3').value;
-
-      if (coupleDate && birthdayDate && birthdayDate2 && birthdayDate3) {
-        localStorage.setItem('coupleDate2', coupleDate);
-        localStorage.setItem('birthdayDate2', birthdayDate);
-        localStorage.setItem('birthdayDate3', birthdayDate2);
-        localStorage.setItem('birthdayDate4', birthdayDate3);
-        calculateDays();
-        updatePreview();
-        closeSettings();
-      } else {
-        alert('日付が正しく入力されていません。');
-      }
-    }
-
-    function calculateDays() {
-      const now = new Date();
-      const coupleDateParsed = new Date(coupleDate);
-      const birthdayDateParsed = new Date(birthdayDate);
-      const birthdayDateParsed2 = new Date(birthdayDate2);
-      const birthdayDateParsed3 = new Date(birthdayDate3);
-
-      const daysSinceStart = Math.floor((now - coupleDateParsed) / (1000 * 60 * 60 * 24));
-      const daysSinceStart2 = Math.floor((now -  birthdayDateParsed2) / (1000 * 60 * 60 * 24));
-      const daysSinceStart3 = Math.floor((now -  birthdayDateParsed3) / (1000 * 60 * 60 * 24));
-
-      const nextBirthday = new Date(now.getFullYear(), birthdayDateParsed.getMonth(), birthdayDateParsed.getDate());
-      if (now > nextBirthday) {
-        nextBirthday.setFullYear(nextBirthday.getFullYear() + 1);
-      }
-      const daysUntilBirthday = Math.ceil((nextBirthday - now) / (1000 * 60 * 60 * 24));
-
-      // 現在の年齢を計算
-      let currentAge = now.getFullYear() - birthdayDateParsed.getFullYear();
-      const monthDiff = now.getMonth() - birthdayDateParsed.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birthdayDateParsed.getDate())) {
-        currentAge--;
-      }
-
-      document.getElementById('previewDaysSinceStart').textContent = `${daysSinceStart} 日目です。`;
-      document.getElementById('previewDaysUntilBirthday').textContent = `${daysUntilBirthday} 日です。`;
-      document.getElementById('previewCurrentAge').textContent = `${currentAge} 歳です。`;
-      document.getElementById('previewSchoolGrade').textContent = `${currentAge + 1} 歳です。`;
-      document.getElementById('previewSchoolGrade2').textContent = `${daysSinceStart3 * 260}(${daysSinceStart2 * 260})`;
-    }
-
-    function updatePreview() {
-      document.getElementById('previewCoupleDate').textContent = coupleDate || '未設定';
-      document.getElementById('previewBirthdayDate').textContent = birthdayDate || '未設定';
-      document.getElementById('previewCoupleDate2').textContent = birthdayDate2 || '未設定';
-      document.getElementById('previewDaysSinceStart').textContent = document.getElementById('previewDaysSinceStart').textContent  || '未設定';
-      document.getElementById('previewDaysUntilBirthday').textContent = document.getElementById('previewDaysUntilBirthday').textContent  || '未設定';
-      document.getElementById('previewCurrentAge').textContent = document.getElementById('previewCurrentAge').textContent  || '未設定';
-      document.getElementById('previewSchoolGrade').textContent = document.getElementById('previewSchoolGrade').textContent  || '未設定';
-      document.getElementById('previewSchoolGrade2').textContent = document.getElementById('previewSchoolGrade2').textContent  || '未設定';
-    }
-
-    function addDangerZonePrompt() {
-      openMap();
-      alert('地図上をクリックして危険区域を追加してください。');
-    }
-
-    function removeDangerZone(id) {
-      dangerZones = dangerZones.filter(zone => zone.id !== id);
-      localStorage.setItem('dangerZones', JSON.stringify(dangerZones));
-      displayDangerZones();
-      renderZonesOnMap();
-    }
-
-    function displayDangerZones() {
-      const list = document.getElementById('dangerZoneList');
-      list.innerHTML = '';
+    function updateDistanceDisplay(lat, lon) {
+      const list = document.getElementById("distanceList");
+      list.innerHTML = "";
       dangerZones.forEach(zone => {
-        const div = document.createElement('div');
-        div.className = 'danger-zone-item';
-        div.innerHTML = `緯度: ${zone.lat}, 経度: ${zone.lng}, 半径: ${zone.radius} m 
-                          <button onclick="removeDangerZone(${zone.id})">削除</button>`;
+        const d = Math.round(calculateDistance(lat, lon, zone.lat, zone.lng));
+        const div = document.createElement("div");
+        div.textContent = `区域（${zone.radius}m）まで: ${d}m`;
         list.appendChild(div);
       });
     }
 
-    function renderZonesOnMap() {
-      map.eachLayer(layer => {
-        if (layer instanceof L.Circle) {
-          map.removeLayer(layer);
+    function displayZones() {
+      const list = document.getElementById("dangerZoneList");
+      list.innerHTML = "";
+      dangerZones.forEach(zone => {
+        const item = document.createElement("div");
+        item.className = "danger-zone-item";
+        item.innerHTML = `
+          緯度: ${zone.lat.toFixed(4)}, 経度: ${zone.lng.toFixed(4)}, 半径: ${zone.radius}m
+          <button onclick="removeZone(${zone.id})">削除</button>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function removeZone(id) {
+      dangerZones = dangerZones.filter(z => z.id !== id);
+      localStorage.setItem("dangerZones", JSON.stringify(dangerZones));
+      displayZones();
+      drawZones();
+    }
+
+    function addDangerZone() {
+      alert("地図をクリックして危険区域を追加してください。");
+      map.once("click", e => {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+        const radius = parseInt(prompt("半径をメートル単位で入力", "100"));
+        if (!isNaN(radius) && radius > 0) {
+          const zone = { lat, lng, radius, id: Date.now() };
+          dangerZones.push(zone);
+          localStorage.setItem("dangerZones", JSON.stringify(dangerZones));
+          displayZones();
+          drawZones();
         }
+      });
+    }
+
+    function drawZones() {
+      map.eachLayer(layer => {
+        if (layer instanceof L.Circle) map.removeLayer(layer);
       });
       dangerZones.forEach(zone => {
         L.circle([zone.lat, zone.lng], {
           radius: zone.radius,
-          color: 'red',
-          fillColor: '#f03',
+          color: "red",
           fillOpacity: 0.3
         }).addTo(map);
       });
     }
 
-    function switchTab(tabName) {
-      // タブのアクティブ状態を切り替え
-      document.querySelectorAll('.settings-tab').forEach(tab => {
-        tab.classList.remove('active');
-      });
-      document.querySelectorAll('.settings-tab-content').forEach(content => {
-        content.classList.remove('active');
-      });
-
-      // 選択されたタブをアクティブに
-      document.querySelector(`.settings-tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
-      document.getElementById(`${tabName}Tab`).classList.add('active');
-    }
-
-    function openMap() {
-      document.getElementById('mapContainer').style.display = 'block';
-      map.invalidateSize();
-    }
-
-    function closeMap() {
-      document.getElementById('mapContainer').style.display = 'none';
-    }
-
-    function updateDangerZoneDistances() {
-      const distanceList = document.getElementById('dangerZoneDistanceList');
-      
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(position => {
-          const currentLat = position.coords.latitude;
-          const currentLng = position.coords.longitude;
-
-          // 既存の要素を更新
-          const existingItems = distanceList.querySelectorAll('.danger-zone-distance-item');
-          dangerZones.forEach((zone, index) => {
-            const distance = calculateDistance(currentLat, currentLng, zone.lat, zone.lng);
-            const roundedDistance = Math.round(distance);
-            
-            if (existingItems[index]) {
-              // 既存の要素を更新
-              const distanceValue = existingItems[index].querySelector('.distance-value');
-              if (distanceValue) {
-                distanceValue.classList.add('distance-updating');
-                setTimeout(() => {
-                  distanceValue.textContent = `${roundedDistance}m`;
-                  distanceValue.classList.remove('distance-updating');
-                }, 150);
-              }
-            } else {
-              // 新しい要素を追加
-              const div = document.createElement('div');
-              div.className = 'danger-zone-distance-item';
-              div.innerHTML = `危険区域まで <span class="distance-value">${roundedDistance}m</span>`;
-              distanceList.appendChild(div);
-            }
-          });
-
-          // 余分な要素を削除
-          while (existingItems.length > dangerZones.length) {
-            distanceList.removeChild(existingItems[existingItems.length - 1]);
-          }
-        });
+    function startTracking() {
+      if (!navigator.geolocation) {
+        alert("位置情報がサポートされていません。");
+        return;
       }
+
+      watchId = navigator.geolocation.watchPosition(pos => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        checkDanger(lat, lon);
+        updateDistanceDisplay(lat, lon);
+      }, err => {
+        console.error("位置取得エラー:", err);
+        alert("位置情報が取得できません。設定で許可してください。");
+      }, {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+      });
     }
 
-    function switchView(view) {
-      // ボタンのアクティブ状態を切り替え
-      document.getElementById('datesViewBtn').classList.remove('active');
-      document.getElementById('dangerZonesViewBtn').classList.remove('active');
-      document.getElementById(`${view}ViewBtn`).classList.add('active');
-
-      // 表示内容を切り替え
-      document.getElementById('datesView').classList.remove('active');
-      document.getElementById('dangerZonesView').classList.remove('active');
-      document.getElementById(`${view}View`).classList.add('active');
-
-      // 現在の表示設定を保存
-      currentView = view;
-      localStorage.setItem('currentView', view);
-    }
-
-    window.onload = function () {
+    window.onload = () => {
       requestNotificationPermission();
-      startLocationWatch();
-      displayDangerZones();
-      if (coupleDate && birthdayDate) {
-        calculateDays();
-      }
-      updatePreview();
+      displayZones();
 
-      // 保存された表示設定を適用
-      switchView(currentView);
-
-      map = L.map('map').setView([35.6895, 139.6917], 13);
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
-        maxZoom: 18,
+      map = L.map('map').setView([35.6812, 139.7671], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
       }).addTo(map);
 
-      renderZonesOnMap();
-      updateDangerZoneDistances();
-
-      // 定期的な更新の間隔を短くして、よりスムーズに
-      setInterval(updateDangerZoneDistances, 2000);
-
-      map.on('click', function(e) {
-        const lat = e.latlng.lat;
-        const lng = e.latlng.lng;
-        const radius = parseInt(prompt("半径（m）を入力してください"));
-        if (radius && !isNaN(radius)) {
-          const newZone = {
-            lat: lat,
-            lng: lng,
-            radius: radius,
-            id: Date.now()
-          };
-          dangerZones.push(newZone);
-          localStorage.setItem('dangerZones', JSON.stringify(dangerZones));
-          displayDangerZones();
-          renderZonesOnMap();
-          updateDangerZoneDistances();
-          closeMap();
-        }
-      });
+      drawZones();
+      startTracking();
     };
   </script>
 </body>
