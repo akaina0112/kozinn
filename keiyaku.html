@@ -6,8 +6,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>利用契約書 or 説明</title>
 <style>
+      /* しねきゃぷしょん - 公式CDNから読み込み */
+    @font-face {
+      font-family: "ShinCaption";
+      src: url("https://dl.dropboxusercontent.com/s/9h6pylxgt5c53oy/ShinCaption.woff2") format("woff2");
+      font-display: swap;
+    }
+
+    /* たぬき油性マジック - 公式CDNから読み込み */
+    @font-face {
+      font-family: "TanukiMarker";
+      src: url("https://tanukifont.com/font/tanuki-permanent-marker/TanukiMagic.woff2") format("woff2");
+      font-display: swap;
+    }
+
+    /* うずらフォント - 自ホストにアップロードして読み込み */
+    @font-face {
+      font-family: "UzuraFont";
+      src: url("./fonts/uzura.woff2") format("woff2"); /* ここを自分のサーバーのパスに変えてください */
+      font-display: swap;
+    }
   body {
-  font-family: "Yu Gothic", "Hiragino Kaku Gothic Pro", Meiryo, sans-serif;
+  font-family: "UzuraFont", sans-serif;
+  font-size: 32px;
   width: 800px;               /* 固定幅 */
   margin: 40px auto;
   line-height: 1.6;
@@ -189,3 +210,4 @@
 
 </body>
 </html>
+
