@@ -1,0 +1,191 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>利用契約書 or 説明</title>
+<style>
+  body {
+    font-family: "Yu Gothic", "Hiragino Kaku Gothic Pro", Meiryo, sans-serif;
+    max-width: 800px;
+    margin: 40px auto;
+    line-height: 1.6;
+    color: #333;
+    padding: 0 20px;
+  }
+  h1, h2 {
+    color: #0055aa;
+  }
+  h1 {
+    border-bottom: 2px solid #0055aa;
+    padding-bottom: 8px;
+  }
+  section {
+    margin-bottom: 30px;
+  }
+  footer {
+    margin-top: 50px;
+    font-size: 0.9em;
+    color: #666;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<h1>利用契約書 or 説明</h1>
+
+<section>
+  <p>まず最初にそのままコードを使うのはNGです。<br></p>
+</section>
+
+<section>
+  <h2>第1条（目的）</h2>
+  <p>このaddonが暗号化されていないのは<br>皆様の参考になればいいと思ったからです。</p>
+</section>
+
+<section>
+  <h2>第3条（利用条件）</h2>
+  <ol>
+    <li>皆仲良くプレイする。</li>
+    <li>初心者には優しく</li>
+  </ol>
+  <h2>第4条（禁止事項）</h2>
+    <ol>
+    <li>二次配布をする行為</li>
+    <li>自作発言をする行為</li>
+    <li>誹謗中傷に使用する行為</li>
+    <li>コードをそのまま使う行為</li>
+  </ol>
+</section>
+
+
+<section>
+ <h2>第5条minecraft_〇〇.jsonについて<br>(作成時に作成したものです。)</h2>
+<table border="1" style="width:100%; border-collapse:collapse; border-width:3px;">
+  <tr>
+    <th style="border:3px solid; padding:7px; width:200px;">Name</th>
+    <th style="border:3px solid; padding:7px; width:300px;">Type</th>
+    <th style="border:3px solid; padding:7px; width:auto;">Description</th>
+  </tr>
+  <tr>
+    <td style="border:3px solid; padding:7px;">minecraft_vanilla_data.json</td>
+    <td style="border:3px solid; padding:7px; white-space:pre-wrap;">
+      "dependencies": [
+        {
+          "module_name": "@minecraft/vanilla-data",
+          "version": "ファイル内に記載"
+        }
+      ]
+    </td>
+    <td style="border:3px solid; padding:7px; white-space:pre-wrap;">
+このモジュールには、ブロック、アイテム、エンティティなど、ゲーム内のバニラコンテンツの型定義と列挙が含まれています。
+このモジュールはMinecraftのリリースバージョンとプレビューバージョンに合わせてバージョン管理されており、ゲームで利用可能な最新の型が含まれています。</td>
+  </tr>
+    <tr>
+    <td style="border:3px solid; padding:7px;">minecraft_net.json</td>
+    <td style="border:3px solid; padding:7px; white-space:pre-wrap;">
+      "dependencies": [
+        {
+          "module_name": "@minecraft/net",
+          "version": "ファイル内に記載"
+        }
+      ]
+    </td>
+    <td style="border:3px solid; padding:7px; white-space:pre-wrap;">
+      このモジュールは、
+      存在しない。
+    </td>
+  </tr>
+    <tr>
+    <td style="border:3px solid; padding:7px;">minecraft_common.json</td>
+    <td style="border:3px solid; padding:7px; white-space:pre-wrap;">
+      "dependencies": [
+        {
+          "module_name": "@minecraft/common",
+          "version": "ファイル内に記載"
+        }
+      ]
+    </td>
+    <td style="border:3px solid; padding:7px; white-space:pre-wrap;">
+このモジュールには、Minecraft スクリプトAPIの基礎的なユーティリティや共通の型定義が含まれています。
+コマンド処理、スコアボード、ロギング、エラー管理など、さまざまな機能を共通化・効率化するために使用されます。
+このモジュールは、他のAPIモジュールと併用されることを想定しており、安定性と互換性を維持するためにバージョン管理されています。    </td>
+  </tr>
+      <tr>
+    <td style="border:3px solid; padding:7px;">minecraft_client.json</td>
+    <td style="border:3px solid; padding:7px; white-space:pre-wrap;">
+      "dependencies": [
+        {
+          "module_name": "@minecraft/client",
+          "version": "ファイル内に記載"
+        }
+      ]
+    </td>
+    <td style="border:3px solid; padding:7px; white-space:pre-wrap;">
+      このモジュールは、
+      存在しない。
+    </td>
+  </tr>
+      <tr>
+    <td style="border:3px solid; padding:7px;">minecraft_server.json</td>
+    <td style="border:3px solid; padding:7px; white-space:pre-wrap;">
+      "dependencies": [
+        {
+          "module_name": "@minecraft/server",
+          "version": "ファイル内に記載"
+        }
+      ]
+    </td>
+    <td style="border:3px solid; padding:7px; white-space:pre-wrap;">
+このモジュールは、Minecraft のゲームロジックにアクセスするためのコアな API を提供します。
+エンティティ操作、ワールド制御、イベント購読、ブロックやアイテムの管理、プレイヤーインタラクションなど、
+サーバー側のスクリプト処理に必要な主要機能が含まれています。
+アドオンやミニゲーム、データ駆動のカスタムコンテンツの開発において基盤となるモジュールです。    </td>
+  </tr>      <tr>
+    <td style="border:3px solid; padding:7px;">minecraft_server_ui.json</td>
+    <td style="border:3px solid; padding:7px; white-space:pre-wrap;">
+      "dependencies": [
+        {
+          "module_name": "@minecraft/server-ui",
+          "version": "ファイル内に記載"
+        }
+      ]
+    </td>
+    <td style="border:3px solid; padding:7px; white-space:pre-wrap;">
+このモジュールは、Minecraft のゲーム内でフォーム（UI）を表示するためのAPIを提供します。
+プレイヤーに選択肢や入力欄を提示する「アクションフォーム」「メッセージフォーム」「モーダルフォーム」などを作成・表示できます。
+ユーザーインターフェースを通じたインタラクティブな体験をスクリプトで実現したいときに使用されます。   </td>
+  </tr>
+</table>
+</section>
+
+<section>
+  <h2>第6条（バグ等について）</h2>
+  <p>申し訳ありませんが、報告してももらえたら修正できるところはします。<br>ただし要望や愚痴などは聞きません。楽しくないなら遊ばなくていいです。</p>
+</section>
+
+<section>
+  <h2>第7条（AIPについて）</h2>
+   <p>AIPは人の書き方によりますが私はjavascriptを使用して書いています。<br>AIPのbataは壊れやすいのでお勧めしません。<br>安定板でも安心はできませんが、安定板をおすすめします。<br>@minecraft/〇〇-bata×<br>@minecraft/〇〇 ◎<br>ただし、チャットなどはbataです・</p>
+</section>
+
+<section>
+  <h2>第6条（契約解除）</h2>
+  <ol>
+    <li>乙が本契約に違反した場合、甲は事前通知なしに本サービスの利用停止または契約解除ができるものとします。</li>
+    <li>甲は必要に応じて本サービスの全部または一部を変更、中断、終了できるものとします。</li>
+  </ol>
+</section>
+<section>
+  <h2>付則</h2>
+  <p>本契約は<strong>[2025年7月14日]</strong>より効力を生じます。</p>
+</section>
+
+<footer>
+  <p>以上</p>
+</footer>
+
+</body>
+</html>
