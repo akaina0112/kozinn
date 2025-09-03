@@ -26,9 +26,9 @@
       src: url("/fonts/uzura.ttf") format("truetype");
       font-display: swap;
     }
-      *{font-family: "ShinCaption";}
+      *{font-family: "ShinCaption",sans-serif;}
   body {
-  font-family: "ShinCaption";
+  font-family: "ShinCaption",sans-serif;
   width: 1000px;      /* 固定幅 */
   margin: 40px auto;
   line-height: 1.6;
@@ -207,7 +207,63 @@
 <footer>
   <p>以上</p>
 </footer>
+<script>
+/*
 
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>フォント切り替えデモ</title>
+<style>
+  /* しねきゃぷしょん - 公式CDNから読み込み */
+  @font-face {
+    font-family: "ShinCaption";
+    src: url("https://dl.dropboxusercontent.com/s/9h6pylxgt5c53oy/ShinCaption.woff2") format("woff2");
+    font-display: swap;
+  }
+
+  /* たぬき油性マジック - 公式CDNから読み込み */
+  @font-face {
+    font-family: "TanukiMarker";
+    src: url("https://tanukifont.com/font/tanuki-permanent-marker/TanukiMagic.woff2") format("woff2");
+    font-display: swap;
+  }
+
+  /* うずらフォント - 自ホストにアップロードして読み込み */
+  @font-face {
+    font-family: "UzuraFont";
+    src: url("/fonts/uzura.ttf") format("truetype");
+    font-display: swap;
+  }
+
+  body {
+    font-family: "ShinCaption", sans-serif; /* デフォルトをしねきゃぷしょんに */
+    background: #fdf6f6;
+    padding: 20px;
+  }
+
+  h1 {
+    font-family: "TanukiMarker", cursive;
+    font-size: 2.5rem;
+    color: #e60033;
+  }
+
+  p {
+    font-family: "UzuraFont", serif;
+    font-size: 1.2rem;
+  }
+</style>
+</head>
+<body>
+  <h1>たぬき油性マジックの見出し</h1>
+  <p>これは「うずらフォント」で表示される本文です。</p>
+  <p>デフォルトの本文は「しねきゃぷしょん」フォントです。</p>
+</body>
+</html>
+
+*/
+</script>
 </body>
 </html>
 
