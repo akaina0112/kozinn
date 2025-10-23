@@ -101,7 +101,7 @@ function getScoreText(score) {
 
 // 問題を生成
 function makeQuestion() {
-  const question = `${level_title[current]} の言葉はどれ？`;
+  const question = `${level_title[current]}は？`;
   document.getElementById("question").textContent = question;
 
   const correct = level[current];
@@ -163,4 +163,5 @@ document.getElementById("nextBtn").onclick = () => {
 makeQuestion();
 </script>
 </body>
+
 </html>
