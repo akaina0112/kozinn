@@ -1,85 +1,903 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <title>mcpack 自動生成ツール</title>
-</head>
-<body>
-  <h1>📦 .mcpack ジェネレーター</h1>
-  <label>index.js のコードを入力:</label><br>
-  <textarea id="jsInput" rows="10" cols="50">// ここにスクリプトを書いてください</textarea><br><br>
-  <button onclick="generatePack()">✅ ダウンロード .mcpack</button>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Textures to Glyph</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <!-- Google Ads -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6790880772028234"
+     crossorigin="anonymous"></script>
+
+  <!-- フォント -->
+  <style>
+    @font-face {
+      font-family: Minecraftia;
+      src: url("https://minato.beyondbedrock.org/web-apps/content/assets/fonts/minecraft.otf") format("truetype");
+    }
+
+    @font-face {
+      font-family: MinecraftTen;
+      src: url("https://minato.beyondbedrock.org/web-apps/content/assets/fonts/minecraft-ten.ttf") format("truetype");
+    }
+
+    @font-face {
+      font-family: ar;
+      src: url("https://minato.beyondbedrock.org/web-apps/content/assets/fonts/arPix.ttf") format("truetype");
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Minecraftia, sans-serif;
+    }
+
+    #loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    #loading-logo {
+      width: 128px;
+      height: 128px;
+    }
+
+    #loading-bar {
+      width: 80%;
+      height: 20px;
+      background-color: #ccc;
+      margin-top: 20px;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    #progress-bar {
+      width: 0%;
+      height: 100%;
+      background-color: #4caf50;
+    }
+
+    #percentage {
+      margin-top: 10px;
+    }
+
+    .main-container {
+      padding: 20px;
+    }
+
+    .title-container .title-image {
+      width: 256px;
+      height: auto;
+      display: block;
+      margin: 0 auto 20px auto;
+    }
+
+    .minecraft-input {
+      padding: 5px;
+      font-family: MinecraftTen, sans-serif;
+    }
+
+    .minecraft-button {
+      padding: 5px 10px;
+      font-family: MinecraftTen, sans-serif;
+      margin-left: 5px;
+      cursor: pointer;
+    }
+
+    .glyph-container {
+      margin-top: 20px;
+    }
+
+    .glyph-grid {
+      display: grid;
+      grid-template-columns: repeat(16, 16px);
+      grid-gap: 2px;
+    }
+
+    .glyph-cell {
+      width: 16px;
+      height: 16px;
+      border: 1px solid #999;
+      position: relative;
+    }
+
+    .cell-label {
+      font-size: 8px;
+      position: absolute;
+      top: 0;
+      left: 0;
+      color: #333;
+    }
+
+    .repo-image img {
+      width: 32px;
+      height: 32px;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0,0,0,0.7);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 90%;
+      max-height: 90%;
+      overflow-y: auto;
+    }
+
+    .mobile-bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-around;
+      background-color: #222;
+      padding: 10px 0;
+      z-index: 999;
+    }
+
+    .nav-button {
+      color: #fff;
+      background: #555;
+      border: none;
+      padding: 10px 20px;
+      font-family: MinecraftTen, sans-serif;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="loading">
+    <img id="loading-logo" src="https://minato.beyondbedrock.org/web-apps/content/assets/images/TTG.png" alt="Textures to Glyph">
+    <div id="loading-bar">
+      <div id="progress-bar"></div>
+    </div>
+    <p id="percentage">0%</p>
+  </div>
+
+  <div class="main-container">
+    <div class="title-container">
+      <img class="title-image" src="https://minato.beyondbedrock.org/web-apps/content/assets/images/TTG.png" alt="Textures to Glyph">
+    </div>
+
+    <div class="top-controls">
+      <div class="control-group">
+        <input class="minecraft-input" type="text" id="output-name" value="glyph_E9.png" placeholder="Output file name">
+        <button class="minecraft-button" id="generate-button">Download</button>
+      </div>
+      <div class="control-group">
+        <button class="minecraft-button" id="import-button">Import Glyph</button>
+        <input type="file" id="import-file" accept="image/png" style="display: none;">
+        <button class="minecraft-button" id="clear-button">Clear All</button>
+      </div>
+    </div>
+
+    <div class="glyph-container">
+      <div class="glyph-grid" id="glyph-grid"></div>
+    </div>
+  </div>
+
+  <div class="mobile-bottom-nav" id="mobile-nav" style="display: none;">
+    <button class="nav-button" id="mobile-generate">Generate</button>
+    <button class="nav-button" id="mobile-import">Import</button>
+    <button class="nav-button" id="mobile-clear">Clear All</button>
+  </div>
+
+  <div class="modal-overlay" id="cell-modal">
+    <div class="modal-content">
+      <div class="modal-title">Slot Options</div>
+      <div class="modal-buttons">
+        <button class="minecraft-button" id="select-vanilla">Use Vanilla Texture</button>
+        <button class="minecraft-button" id="upload-custom">Upload Custom Texture</button>
+        <button class="minecraft-button" id="copy-symbol">Copy Unicode Symbol</button>
+        <button class="minecraft-button" id="clear-cell">Clear Cell</button>
+      </div>
+      <input type="file" id="custom-image" accept="image/png" style="display: none;">
+      <button class="minecraft-button" id="close-modal" style="margin-top: 15px;">Close</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="vanilla-modal">
+    <div class="modal-content">
+      <div class="modal-title">Select Vanilla Texture</div>
+      <div class="search-container">
+        <input class="minecraft-input" type="text" id="search-box" placeholder="Search Textures...">
+      </div>
+      <div class="repo-image-grid" id="repo-images"></div>
+      <button class="minecraft-button" id="close-vanilla-modal" style="margin-top: 15px;">Close</button>
+    </div>
+  </div>
+
+  <canvas id="output-canvas" width="256" height="256"></canvas>
+
   <script>
-    function generateUUID() {
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
+  <script>
+
+    const imageURIs = {};
+    const glyphData = new Array(256).fill(null);
+    let currentCellIndex = -1;
+
+    const loadingElement = document.getElementById('loading');
+    const progressBar = document.getElementById('progress-bar');
+    const percentageText = document.getElementById('percentage');
+    const glyphGrid = document.getElementById('glyph-grid');
+    const cellModal = document.getElementById('cell-modal');
+    const vanillaModal = document.getElementById('vanilla-modal');
+    const repoImagesContainer = document.getElementById('repo-images');
+    const searchBox = document.getElementById('search-box');
+    const outputName = document.getElementById('output-name');
+
+    window.onload = () => {
+      createGlyphGrid();
+      loadVanillaItems();
+      setupEventListeners();
+      setupMobileUI();
+    };
+
+    function createGlyphGrid() {
+      for (let i = 0; i < 256; i++) {
+        const cell = document.createElement('div');
+        cell.classList.add('glyph-cell');
+        cell.dataset.index = i;
+
+        const codePoint = 0xE000 + i;
+        cell.dataset.codePoint = codePoint;
+
+        const row = Math.floor(i / 16);
+        const col = i % 16;
+        const coordLabel = document.createElement('span');
+        coordLabel.classList.add('cell-label');
+        coordLabel.textContent = row.toString(16).toUpperCase() + col.toString(16).toUpperCase();
+        cell.appendChild(coordLabel);
+
+        cell.addEventListener('click', () => openCellOptions(i));
+        glyphGrid.appendChild(cell);
+      }
+    }
+
+    async function loadVanillaItems() {
+      try {
+        let currentRepoVersion = await getLatestRepoVersion();
+
+        let totalResources = 0;
+        let processedCount = 0;
+
+        const cachedItems = localStorage.getItem('cachedVanillaItems');
+        if (cachedItems) {
+          const cachedData = JSON.parse(cachedItems);
+
+          if (cachedData.version === currentRepoVersion) {
+            console.log("Loading items from cache (version: " + currentRepoVersion + ")");
+
+            Object.assign(imageURIs, cachedData.items);
+
+            for (const [name, src] of Object.entries(cachedData.items)) {
+              addVanillaImageToGrid(name, src);
+            }
+
+            setTimeout(() => {
+              loadingElement.style.display = 'none';
+            }, 300);
+
+            return;
+          } else {
+            console.log("Cache outdated. Repository version: " + currentRepoVersion + ", cached version: " + cachedData.version);
+          }
+        }
+
+        console.log("Loading resources from repository");
+
+        const foldersToProcess = [
+          "resource_pack/textures/environment",
+          "resource_pack/textures/map",
+          
+          "resource_pack/textures/items",
+          "resource_pack/textures/items/spawn_eggs",
+          "resource_pack/textures/items/harness",
+          "resource_pack/textures/items/candles",
+
+          "resource_pack/textures/blocks",
+          "resource_pack/textures/blocks/deepslate",
+          "resource_pack/textures/blocks/candles",
+          "resource_pack/textures/blocks/huge_fungus",
+        ];
+
+        const loadedImages = {};
+
+        while (foldersToProcess.length > 0) {
+          const currentFolder = foldersToProcess.shift();
+
+          try {
+            const response = await fetch(
+              `https://api.github.com/repos/Mojang/bedrock-samples/contents/${currentFolder}`
+            );
+
+            if (!response.ok) {
+              console.error(`Failed to fetch contents of ${currentFolder}:`, response.status);
+              continue;
+            }
+
+            const data = await response.json();
+
+            const pngFiles = data.filter(item => item.type === "file" && item.name.endsWith('.png'));
+            const subfolders = data.filter(item => item.type === "dir");
+
+            subfolders.forEach(folder => {
+              foldersToProcess.push(folder.path);
+            });
+
+            totalResources += pngFiles.length;
+
+            const folderPromises = pngFiles.map(async (file) => {
+              try {
+                const imageUrl = file.download_url;
+                const imageBlob = await fetch(imageUrl).then(res => res.blob());
+
+                return new Promise((resolve) => {
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    const img = new Image();
+                    img.onload = () => {
+
+                      if (img.width === 16 && img.height === 16) {
+
+                        const folderPrefix = currentFolder.replace('resource_pack/textures/', '');
+                        const displayName = `${folderPrefix}/${file.name}`;
+
+                        loadedImages[displayName] = reader.result;
+                      }
+
+                      processedCount++;
+                      updateLoadingProgress(processedCount, totalResources);
+                      resolve();
+                    };
+                    img.src = reader.result;
+                  };
+                  reader.readAsDataURL(imageBlob);
+                });
+              } catch (error) {
+                console.error(`Error loading ${file.name}:`, error);
+                processedCount++;
+                updateLoadingProgress(processedCount, totalResources);
+                return Promise.resolve();
+              }
+            });
+
+            await Promise.all(folderPromises);
+
+          } catch (error) {
+            console.error(`Error processing folder ${currentFolder}:`, error);
+            continue;
+          }
+        }
+
+        Object.assign(imageURIs, loadedImages);
+
+        for (const [name, src] of Object.entries(loadedImages)) {
+          addVanillaImageToGrid(name, src);
+        }
+
+        const cacheData = {
+          version: currentRepoVersion,
+          items: { ...imageURIs }
+        };
+
+        try {
+          localStorage.setItem('cachedVanillaItems', JSON.stringify(cacheData));
+          console.log("Cached items with version: " + currentRepoVersion);
+        } catch (e) {
+          console.warn("Could not cache items in localStorage:", e);
+        }
+
+      } catch (error) {
+        console.error("Error fetching resources:", error);
+
+        setTimeout(() => {
+          loadingElement.style.display = 'none';
+        }, 1000);
+      }
+    }
+
+    async function getLatestRepoVersion() {
+      try {
+
+        const releaseUrl = "https://api.github.com/repos/Mojang/bedrock-samples/releases/latest";
+        const releaseResponse = await fetch(releaseUrl);
+
+        if (releaseResponse.ok) {
+          const releaseData = await releaseResponse.json();
+          return releaseData.tag_name;
+        }
+
+        const commitsUrl = "https://api.github.com/repos/Mojang/bedrock-samples/commits?per_page=1";
+        const commitsResponse = await fetch(commitsUrl);
+
+        if (commitsResponse.ok) {
+          const commitsData = await commitsResponse.json();
+          if (commitsData.length > 0) {
+            return commitsData[0].sha.substring(0, 7);
+          }
+        }
+
+        return "ts-" + Date.now();
+      } catch (error) {
+        console.error("Error fetching repository version:", error);
+        return "ts-" + Date.now();
+      }
+    }
+
+    function updateLoadingProgress(current, total) {
+      const progress = (current / total) * 100;
+      progressBar.style.width = `${progress}%`;
+      percentageText.innerText = `${Math.floor(progress)}%`;
+
+      if (current >= total) {
+        setTimeout(() => {
+          loadingElement.style.display = 'none';
+        }, 1000);
+      }
+    }
+
+    function addVanillaImageToGrid(name, src) {
+      const div = document.createElement('div');
+      div.classList.add('repo-image');
+      div.title = name.replace('.png', '').replaceAll('_', ' ');
+
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = name;
+      img.loading = 'lazy';
+
+      div.appendChild(img);
+      div.addEventListener('click', () => selectVanillaImage(name));
+      repoImagesContainer.appendChild(div);
+    }
+
+    function setupEventListeners() {
+
+      document.getElementById('close-modal').addEventListener('click', closeAllModals);
+      document.getElementById('close-vanilla-modal').addEventListener('click', closeAllModals);
+
+      document.getElementById('select-vanilla').addEventListener('click', openVanillaSelection);
+      document.getElementById('upload-custom').addEventListener('click', () => {
+        document.getElementById('custom-image').click();
+      });
+      document.getElementById('copy-symbol').addEventListener('click', copyUnicodeSymbol);
+      document.getElementById('clear-cell').addEventListener('click', clearCurrentCell);
+
+      document.getElementById('generate-button').addEventListener('click', generateAndDownload);
+      document.getElementById('clear-button').addEventListener('click', clearAllCells);
+      document.getElementById('import-button').addEventListener('click', () => {
+        document.getElementById('import-file').click();
+      });
+
+      document.getElementById('custom-image').addEventListener('change', uploadCustomImage);
+      document.getElementById('import-file').addEventListener('change', importGlyph);
+
+      searchBox.addEventListener('input', filterVanillaImages);
+
+      window.addEventListener('click', (e) => {
+        if (e.target === cellModal || e.target === vanillaModal) {
+          closeAllModals();
+        }
       });
     }
 
-    function getPackNumber() {
-      const key = "packCount";
-      const count = parseInt(localStorage.getItem(key) || "1");
-      localStorage.setItem(key, count + 1);
-      return count;
+    function openCellOptions(index) {
+      currentCellIndex = index;
+      cellModal.style.display = 'flex';
     }
 
-    async function generatePack() {
-      const jsCode = document.getElementById("jsInput").value;
-      const zip = new JSZip();
+    function openVanillaSelection() {
+      cellModal.style.display = 'none';
+      vanillaModal.style.display = 'flex';
+      searchBox.value = '';
+      filterVanillaImages();
+    }
 
-      const packNum = getPackNumber();
-      const name = `テスト${packNum}`;
-      const uuid1 = generateUUID();
-      const uuid2 = generateUUID();
-      const uuid3 = generateUUID();
+    function closeAllModals() {
+      cellModal.style.display = 'none';
+      vanillaModal.style.display = 'none';
+    }
 
-      const manifest = {
-        "format_version": 2,
-        "header": {
-          "name": name,
-          "description": "pack.description",
-          "uuid": uuid1,
-          "version": [2, 0, 0],
-          "min_engine_version": [1, 18, 0]
-        },
-        "modules": [
-          {
-            "type": "script",
-            "description": "behavior module",
-            "uuid": uuid2,
-            "version": [2, 0, 0],
-            "language": "javascript",
-            "entry": "scripts/index.js"
-          },
-          {
-            "description": "縺ゅ≠縺ゅ≠縺ゅ≠\n by 縺ゅ≠",
-            "type": "data",
-            "uuid": uuid3,
-            "version": [2, 0, 0]
+    function selectVanillaImage(name) {
+      if (currentCellIndex >= 0) {
+        const cell = document.querySelector(`.glyph-cell[data-index="${currentCellIndex}"]`);
+
+        const newCell = document.createElement('div');
+        newCell.classList.add('glyph-cell');
+        newCell.dataset.index = currentCellIndex;
+        newCell.dataset.codePoint = cell.dataset.codePoint;
+
+        const img = document.createElement('img');
+        img.src = imageURIs[name];
+        newCell.appendChild(img);
+
+        cell.parentNode.replaceChild(newCell, cell);
+
+        newCell.addEventListener('click', () => openCellOptions(currentCellIndex));
+
+        glyphData[currentCellIndex] = {
+          src: imageURIs[name],
+          name: name
+        };
+        closeAllModals();
+      }
+    }
+
+    function uploadCustomImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+
+          if (img.width <= 16 && img.height <= 16) {
+            applyCustomImage(e.target.result);
+          } else {
+            alert('Image must be 16x16 pixels or smaller!');
           }
-        ],
-        "dependencies": [
-          {
-            "module_name": "@minecraft/server",
-            "version": "1.18.0"
-          },
-          {
-            "module_name": "@minecraft/server-ui",
-            "version": "1.3.0"
-          }
-        ]
+        };
+        img.src = e.target.result;
       };
+      reader.readAsDataURL(file);
 
-      zip.file("manifest.json", JSON.stringify(manifest, null, 2));
-      zip.file("scripts/index.js", jsCode);
+      event.target.value = '';
+    }
 
-      const content = await zip.generateAsync({ type: "blob" });
-      saveAs(content, `${name}.mcpack`);
+    function applyCustomImage(src) {
+      if (currentCellIndex >= 0) {
+        const cell = document.querySelector(`.glyph-cell[data-index="${currentCellIndex}"]`);
+
+        const newCell = document.createElement('div');
+        newCell.classList.add('glyph-cell');
+        newCell.dataset.index = currentCellIndex;
+        newCell.dataset.codePoint = cell.dataset.codePoint;
+
+        const img = document.createElement('img');
+        img.src = src;
+        newCell.appendChild(img);
+
+        cell.parentNode.replaceChild(newCell, cell);
+
+        newCell.addEventListener('click', () => openCellOptions(currentCellIndex));
+
+        glyphData[currentCellIndex] = {
+          src: src,
+          name: 'custom'
+        };
+
+        closeAllModals();
+      }
+    }
+
+    function copyUnicodeSymbol() {
+      if (currentCellIndex >= 0) {
+
+        const nameWithoutExtension = outputName.value.replace(/\.png$/i, '');
+        const prefix = nameWithoutExtension.substring(6).toUpperCase();
+
+        const row = Math.floor(currentCellIndex / 16);
+        const col = currentCellIndex % 16;
+
+        const rowHex = row.toString(16).toUpperCase().padStart(2, '0');
+        const colHex = col.toString(16).toUpperCase().padStart(2, '0');
+
+        const codePoint = parseInt(prefix + rowHex[1] + colHex[1], 16);
+        const symbol = String.fromCodePoint(codePoint);
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(symbol)
+            .then(() => {
+              alert('Unicode symbol copied to clipboard: ' + symbol + ' (0x' + codePoint.toString(16).toUpperCase() + ')');
+            })
+            .catch(err => {
+              console.error('Could not copy text: ', err);
+              fallbackCopy(symbol);
+            });
+        } else {
+          fallbackCopy(symbol);
+        }
+        closeAllModals();
+      }
+    }
+
+    function fallbackCopy(text) {
+
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+
+      textArea.focus();
+      textArea.select();
+
+      let successful = false;
+      try {
+        successful = document.execCommand('copy');
+        if (successful) {
+          alert('Unicode symbol copied to clipboard!');
+        } else {
+
+          alert('Could not copy automatically. Your symbol is: ' + text);
+        }
+      } catch (err) {
+        console.error('Fallback: Could not copy text: ', err);
+        alert('Could not copy automatically. Your symbol is: ' + text);
+      }
+
+      document.body.removeChild(textArea);
+    }
+
+    function clearCurrentCell() {
+      if (currentCellIndex >= 0) {
+        console.log("Clearing cell at index:", currentCellIndex);
+        const cell = document.querySelector(`.glyph-cell[data-index="${currentCellIndex}"]`);
+
+        if (!cell) {
+          console.error("Cell not found for index:", currentCellIndex);
+          return;
+        }
+
+        const newCell = document.createElement('div');
+        newCell.classList.add('glyph-cell');
+        newCell.dataset.index = currentCellIndex;
+        newCell.dataset.codePoint = cell.dataset.codePoint;
+
+        const row = Math.floor(currentCellIndex / 16);
+        const col = currentCellIndex % 16;
+        const coordLabel = document.createElement('span');
+        coordLabel.classList.add('cell-label');
+        coordLabel.textContent = row.toString(16).toUpperCase() + col.toString(16).toUpperCase();
+        newCell.appendChild(coordLabel);
+
+        if (cell.parentNode) {
+          cell.parentNode.replaceChild(newCell, cell);
+
+          newCell.addEventListener('click', () => openCellOptions(currentCellIndex));
+
+          glyphData[currentCellIndex] = null;
+
+          console.log("Cell cleared successfully");
+        } else {
+          console.error("Cell has no parent node:", cell);
+        }
+
+        closeAllModals();
+      } else {
+        console.error("No cell selected (currentCellIndex:", currentCellIndex, ")");
+      }
+    }
+
+    function clearAllCells() {
+      if (confirm('Are you sure you want to clear all cells?')) {
+
+        glyphGrid.innerHTML = '';
+        createGlyphGrid();
+
+        for (let i = 0; i < 256; i++) {
+          glyphData[i] = null;
+        }
+      }
+    }
+
+    function filterVanillaImages() {
+      const searchTerm = searchBox.value.toLowerCase();
+      const images = repoImagesContainer.querySelectorAll('.repo-image');
+
+      images.forEach(image => {
+        const name = image.title.toLowerCase();
+        if (name.includes(searchTerm)) {
+          image.style.display = 'block';
+        } else {
+          image.style.display = 'none';
+        }
+      });
+    }
+
+    function generateAndDownload() {
+      const canvas = document.getElementById('output-canvas');
+      const ctx = canvas.getContext('2d');
+      let filename = outputName.value;
+
+      if (!filename.toLowerCase().endsWith('.png')) {
+        filename += '.png';
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const drawPromises = [];
+
+      for (let i = 0; i < 256; i++) {
+        if (glyphData[i]) {
+          const x = (i % 16) * 16;
+          const y = Math.floor(i / 16) * 16;
+
+          const drawPromise = new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+              ctx.drawImage(img, x, y, 16, 16);
+              resolve();
+            };
+            img.src = glyphData[i].src;
+          });
+
+          drawPromises.push(drawPromise);
+        }
+      }
+
+      Promise.all(drawPromises).then(() => {
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+
+    function importGlyph(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const regex = /^glyph_[0-9A-F][0-9A-F]\.png$/i;
+      if (regex.test(file.name)) {
+
+        outputName.value = file.name.toUpperCase();
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+
+          if (img.width === 256 && img.height === 256) {
+
+            clearAllCells();
+
+            const canvas = document.getElementById('output-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+
+            for (let y = 0; y < 16; y++) {
+              for (let x = 0; x < 16; x++) {
+                const index = y * 16 + x;
+                const cellX = x * 16;
+                const cellY = y * 16;
+
+                const imageData = ctx.getImageData(cellX, cellY, 16, 16);
+                let hasContent = false;
+
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                  const r = imageData.data[i];
+                  const g = imageData.data[i + 1];
+                  const b = imageData.data[i + 2];
+                  const a = imageData.data[i + 3];
+
+                  if (a > 0 && !(
+                    (r === 204 && g === 204 && b === 204) ||
+                    (r === 255 && g === 255 && b === 255)
+                  )) {
+                    hasContent = true;
+                    break;
+                  }
+                }
+
+                if (hasContent) {
+
+                  const tempCanvas = document.createElement('canvas');
+                  tempCanvas.width = 16;
+                  tempCanvas.height = 16;
+                  const tempCtx = tempCanvas.getContext('2d');
+                  tempCtx.putImageData(imageData, 0, 0);
+
+                  const cell = document.querySelector(`.glyph-cell[data-index="${index}"]`);
+                  const cellImg = document.createElement('img');
+                  cellImg.src = tempCanvas.toDataURL();
+
+                  while (cell.firstChild) {
+                    cell.removeChild(cell.firstChild);
+                  }
+
+                  cell.appendChild(cellImg);
+
+                  glyphData[index] = {
+                    src: tempCanvas.toDataURL(),
+                    name: 'imported'
+                  };
+                }
+              }
+            }
+
+            alert('Glyph imported successfully!');
+          } else {
+            alert('Imported image must be 256x256 pixels!');
+          }
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+
+      event.target.value = '';
+    }
+
+    function setupMobileUI() {
+
+      const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+      if (isMobile) {
+
+        const mobileNav = document.getElementById('mobile-nav');
+        mobileNav.style.display = 'flex';
+
+        document.getElementById('mobile-generate').addEventListener('click', generateAndDownload);
+        document.getElementById('mobile-import').addEventListener('click', () => {
+          document.getElementById('import-file').click();
+        });
+        document.getElementById('mobile-clear').addEventListener('click', clearAllCells);
+
+        const cells = document.querySelectorAll('.glyph-cell');
+        cells.forEach(cell => {
+          cell.addEventListener('touchstart', function () {
+            this.style.opacity = '0.7';
+          });
+
+          cell.addEventListener('touchend', function () {
+            this.style.opacity = '1';
+          });
+        });
+
+        const modals = document.querySelectorAll('.modal-content');
+        modals.forEach(modal => {
+
+          let startY;
+          modal.addEventListener('touchstart', function (e) {
+            startY = e.touches[0].clientY;
+          });
+
+          modal.addEventListener('touchmove', function (e) {
+            const currentY = e.touches[0].clientY;
+            const diff = currentY - startY;
+
+            if (diff > 50) {
+              closeAllModals();
+            }
+          });
+        });
+
+        document.body.style.minHeight = window.innerHeight + 'px';
+
+        window.addEventListener('resize', function () {
+          document.body.style.minHeight = window.innerHeight + 'px';
+        });
+      }
     }
   </script>
+  </script>
+
 </body>
 </html>
