@@ -1405,7 +1405,7 @@
 
     function generateAndDownload() {
       const canvas = document.getElementById('output-canvas');
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
       let filename = outputName.value;
 
       if (!filename.toLowerCase().endsWith('.png')) {
@@ -1462,7 +1462,7 @@
             clearAllCells();
 
             const canvas = document.getElementById('output-canvas');
-            const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0);
 
