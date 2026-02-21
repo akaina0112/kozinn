@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>運命の左右</title>
+<style>
+body {
+  font-family: sans-serif;
+  text-align: center;
+  margin-top: 80px;
+}
+.choice {
+  display: inline-block;
+  padding: 40px 80px;
+  margin: 40px;
+  font-size: 28px;
+  border: 3px solid black;
+  cursor: pointer;
+  background: #f5f5f5;
+}
+#resultArea {
+  display: none;
+  margin-top: 40px;
+  font-size: 30px;
+}
+#adminArea {
+  display: none;
+  margin-top: 30px;
+}
+button {
+  padding: 8px 20px;
+  font-size: 16px;
+}
+</style>
+</head>
+<body>
+
+<h2>🔥 運命の二択</h2>
+
+<div id="choices"></div>
+
+<div id="resultArea">
+  <h3>🎉 あなたの結果</h3>
+  <p id="resultText"></p>
+</div>
+
+<hr style="margin-top:60px">
+
+<button onclick="showAdmin()">管理人</button>
+
+<div id="adminArea">
+  <input type="password" id="password" placeholder="パスワード">
+  <button onclick="checkPassword()">確認</button>
+  <div id="allResults"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
+
+const PASSWORD = "011289"; // ←変更済み
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBdE0HjsMvv_j91RV6CeM59QLm1PPkUPbs",
+  authDomain: "akaina-33a5c.firebaseapp.com",
+  databaseURL: "https://akaina-33a5c-default-rtdb.firebaseio.com/",
+  projectId: "akaina-33a5c",
+  storageBucket: "akaina-33a5c.firebasestorage.app",
+  messagingSenderId: "735800003066",
+  appId: "1:735800003066:web:1f07acffa5bd0aa5a17c43"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let results = ["結婚", "結婚お預け"];
+results.sort(() => Math.random() - 0.5);
+
+const labels = ["左", "右"];
+const choicesDiv = document.getElementById("choices");
+
+labels.forEach((label, index) => {
+  const div = document.createElement("div");
+  div.className = "choice";
+  div.textContent = label;
+  div.onclick = () => select(results[index]);
+  choicesDiv.appendChild(div);
+});
+
+function formatDate(date) {
+  const days = ["日","月","火","水","木","金","土"];
+  return `${date.getFullYear()}/` +
+         `${String(date.getMonth()+1).padStart(2,"0")}/` +
+         `${String(date.getDate()).padStart(2,"0")} ` +
+         `${String(date.getHours()).padStart(2,"0")}:` +
+         `${String(date.getMinutes()).padStart(2,"0")}:` +
+         `${String(date.getSeconds()).padStart(2,"0")}（${days[date.getDay()]}）`;
+}
+
+function select(result) {
+  document.getElementById("choices").style.display = "none";
+  document.getElementById("resultArea").style.display = "block";
+  document.getElementById("resultText").textContent = result;
+
+  const record = {
+    result: result,
+    time: formatDate(new Date())
+  };
+
+  push(ref(db, "history"), record);
+}
+
+window.showAdmin = function() {
+  document.getElementById("adminArea").style.display = "block";
+}
+
+window.checkPassword = function() {
+  const input = document.getElementById("password").value;
+  if (input !== PASSWORD) {
+    alert("パスワードが違います");
+    return;
+  }
+
+  onValue(ref(db, "history"), (snapshot) => {
+    const data = snapshot.val();
+    if (!data) {
+      document.getElementById("allResults").innerHTML = "履歴なし";
+      return;
+    }
+
+    const list = Object.values(data);
+    document.getElementById("allResults").innerHTML =
+      "<h3>全履歴</h3>" +
+      list.map((r,i) =>
+        `${i+1}. ${r.result} - ${r.time}`
+      ).join("<br>");
+  });
+}
+</script>
+
+</body>
+</html>
