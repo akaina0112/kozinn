@@ -3,143 +3,222 @@
 <head>
 <meta charset="UTF-8">
 <title>運命の左右</title>
+
 <style>
-body {
-  font-family: sans-serif;
-  text-align: center;
-  margin-top: 80px;
+body{
+  margin:0;
+  font-family: "Hiragino Mincho ProN", serif;
+  text-align:center;
+  background: linear-gradient(135deg,#eeeeee,#cccccc);
 }
-.choice {
-  display: inline-block;
-  padding: 40px 80px;
-  margin: 40px;
-  font-size: 28px;
-  border: 3px solid black;
-  cursor: pointer;
-  background: #f5f5f5;
+
+/* 管理人ボタン */
+#adminBtn{
+  position:fixed;
+  top:20px;
+  right:20px;
+  padding:8px 18px;
+  background:black;
+  color:white;
+  border:none;
+  cursor:pointer;
 }
-#resultArea {
-  display: none;
-  margin-top: 40px;
-  font-size: 30px;
+
+/* 選択ボタン */
+.choice{
+  display:inline-block;
+  padding:50px 120px;
+  margin:80px;
+  font-size:32px;
+  border:4px solid #333;
+  cursor:pointer;
+  background:white;
+  transition:0.3s;
 }
-#adminArea {
-  display: none;
-  margin-top: 30px;
+
+.choice:hover{
+  transform:scale(1.1);
+  background:#fff8dc;
 }
-button {
-  padding: 8px 20px;
-  font-size: 16px;
+
+/* 結果 */
+#resultArea{
+  display:none;
+  margin-top:80px;
+  font-size:45px;
+}
+
+/* 結婚特別演出 */
+.marriage{
+  color:gold;
+  font-size:55px;
+  text-shadow:0 0 20px gold;
+  animation:glow 1s infinite alternate;
+}
+
+@keyframes glow{
+  from{ text-shadow:0 0 10px gold; }
+  to{ text-shadow:0 0 40px orange; }
+}
+
+/* モーダル共通 */
+.modal{
+  display:none;
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,0.6);
+  justify-content:center;
+  align-items:center;
+}
+
+.modalContent{
+  background:#ddd;
+  padding:40px;
+  text-align:center;
+}
+
+#history{
+  max-height:400px;
+  overflow-y:auto;
+  margin-top:20px;
+  text-align:left;
 }
 </style>
 </head>
+
 <body>
 
-<h2>🔥 運命の二択</h2>
+<button id="adminBtn">管理人</button>
 
-<div id="choices"></div>
+<h1>運命の左右</h1>
 
-<div id="resultArea">
-  <h3>🎉 あなたの結果</h3>
-  <p id="resultText"></p>
+<div id="choices">
+  <div class="choice" onclick="draw()">左</div>
+  <div class="choice" onclick="draw()">右</div>
 </div>
 
-<hr style="margin-top:60px">
+<div id="resultArea"></div>
 
-<button onclick="showAdmin()">管理人</button>
+<!-- パスワードモーダル -->
+<div id="passwordModal" class="modal">
+  <div class="modalContent">
+    <h2>パスワード入力</h2>
+    <input type="password" id="adminPass">
+    <br><br>
+    <button onclick="checkPass()">OK</button>
+  </div>
+</div>
 
-<div id="adminArea">
-  <input type="password" id="password" placeholder="パスワード">
-  <button onclick="checkPassword()">確認</button>
-  <div id="allResults"></div>
+<!-- エラーモーダル -->
+<div id="errorModal" class="modal">
+  <div class="modalContent">
+    <h3>違います</h3>
+    <button onclick="closeError()">OK</button>
+  </div>
+</div>
+
+<!-- 管理人画面 -->
+<div id="adminModal" class="modal">
+  <div class="modalContent" style="width:80%;">
+    <h2>管理人画面（履歴）</h2>
+    <div id="history"></div>
+    <br>
+    <button onclick="closeAdmin()">閉じる</button>
+  </div>
 </div>
 
 <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js";
+import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
 
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyBdE0HjsMvv_j91RV6CeM59QLm1PPkUPbs",
-    authDomain: "akaina-33a5c.firebaseapp.com",
-    projectId: "akaina-33a5c",
-    storageBucket: "akaina-33a5c.firebasestorage.app",
-    messagingSenderId: "735800003066",
-    appId: "1:735800003066:web:f96fd1c07ee6e82ca17c43",
-    measurementId: "G-JRH4K0TP5Z"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyBdE0HjsMvv_j91RV6CeM59QLm1PPkUPbs",
+  authDomain: "akaina-33a5c.firebaseapp.com",
+  projectId: "akaina-33a5c",
+  storageBucket: "akaina-33a5c.firebasestorage.app",
+  messagingSenderId: "735800003066",
+  appId: "1:735800003066:web:f96fd1c07ee6e82ca17c43",
+  measurementId: "G-JRH4K0TP5Z"
+};
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
+const app = initializeApp(firebaseConfig);
+getAnalytics(app);
+const db = getDatabase(app);
 
-let results = ["結婚", "結婚お預け"];
-results.sort(() => Math.random() - 0.5);
+const resultsRef = ref(db, "results");
 
-const labels = ["左", "右"];
-const choicesDiv = document.getElementById("choices");
+window.draw = function(){
+  const resultArea = document.getElementById("resultArea");
+  const choices = document.getElementById("choices");
+  choices.style.display="none";
 
-labels.forEach((label, index) => {
-  const div = document.createElement("div");
-  div.className = "choice";
-  div.textContent = label;
-  div.onclick = () => select(results[index]);
-  choicesDiv.appendChild(div);
-});
+  const result = Math.random() < 0.5 ? "結婚" : "結婚お預け";
 
-function formatDate(date) {
-  const days = ["日","月","火","水","木","金","土"];
-  return `${date.getFullYear()}/` +
-         `${String(date.getMonth()+1).padStart(2,"0")}/` +
-         `${String(date.getDate()).padStart(2,"0")} ` +
-         `${String(date.getHours()).padStart(2,"0")}:` +
-         `${String(date.getMinutes()).padStart(2,"0")}:` +
-         `${String(date.getSeconds()).padStart(2,"0")}（${days[date.getDay()]}）`;
-}
+  const now = new Date();
+  const time =
+    now.getFullYear()+"年"+
+    (now.getMonth()+1)+"月"+
+    now.getDate()+"日 "+
+    now.getHours()+"時"+
+    now.getMinutes()+"分"+
+    now.getSeconds()+"秒 ("+
+    ["日","月","火","水","木","金","土"][now.getDay()]+")";
 
-function select(result) {
-  document.getElementById("choices").style.display = "none";
-  document.getElementById("resultArea").style.display = "block";
-  document.getElementById("resultText").textContent = result;
+  push(resultsRef,{
+    result:result,
+    time:time
+  });
 
-  const record = {
-    result: result,
-    time: formatDate(new Date())
-  };
+  resultArea.style.display="block";
 
-  push(ref(db, "history"), record);
-}
-
-window.showAdmin = function() {
-  document.getElementById("adminArea").style.display = "block";
-}
-
-window.checkPassword = function() {
-  const input = document.getElementById("password").value;
-  if (input !== PASSWORD) {
-    alert("パスワードが違います");
-    return;
+  if(result==="結婚"){
+    resultArea.innerHTML = "<div class='marriage'>🎉 結婚 🎉</div>";
+  }else{
+    resultArea.innerHTML = "結婚お預け";
   }
+};
 
-  onValue(ref(db, "history"), (snapshot) => {
-    const data = snapshot.val();
-    if (!data) {
-      document.getElementById("allResults").innerHTML = "履歴なし";
-      return;
-    }
+/* 管理人 */
+document.getElementById("adminBtn").onclick=function(){
+  document.getElementById("passwordModal").style.display="flex";
+};
 
-    const list = Object.values(data);
-    document.getElementById("allResults").innerHTML =
-      "<h3>全履歴</h3>" +
-      list.map((r,i) =>
-        `${i+1}. ${r.result} - ${r.time}`
-      ).join("<br>");
+window.checkPass=function(){
+  const pass=document.getElementById("adminPass").value;
+  if(pass==="011289"){
+    document.getElementById("passwordModal").style.display="none";
+    openAdmin();
+  }else{
+    document.getElementById("passwordModal").style.display="none";
+    document.getElementById("errorModal").style.display="flex";
+  }
+};
+
+window.closeError=function(){
+  document.getElementById("errorModal").style.display="none";
+};
+
+function openAdmin(){
+  document.getElementById("adminModal").style.display="flex";
+
+  const historyDiv=document.getElementById("history");
+  historyDiv.innerHTML="";
+
+  onValue(resultsRef,(snapshot)=>{
+    historyDiv.innerHTML="";
+    snapshot.forEach((child)=>{
+      const data=child.val();
+      historyDiv.innerHTML +=
+        "<div>"+data.time+" → "+data.result+"</div>";
+    });
   });
 }
+
+window.closeAdmin=function(){
+  document.getElementById("adminModal").style.display="none";
+};
 </script>
 
 </body>
