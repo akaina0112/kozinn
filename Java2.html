@@ -1,129 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Textures to Glyph</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Textures to Glyph</title>
 
-  <style>
-    /* ===== フォント ===== */
-    @font-face {
-      font-family: Minecraftia;
-      src: url("https://minato.beyondbedrock.org/web-apps/content/assets/fonts/minecraft.otf") format("truetype");
-    }
-    @font-face {
-      font-family: MinecraftTen;
-      src: url("https://minato.beyondbedrock.org/web-apps/content/assets/fonts/minecraft-ten.ttf") format("truetype");
-    }
-    @font-face {
-      font-family: ar;
-      src: url("https://minato.beyondbedrock.org/web-apps/content/assets/fonts/arPix.ttf") format("truetype");
-    }
+<style>
+/* ===== 基本 ===== */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #000;
+  color: #c6c6c6;
+  font-family: Minecraftia, sans-serif;
+}
 
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
 
-    body {
-      font-family: "Minecraftia", sans-serif;
-      background: #000;
-      color: #c6c6c6;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      overflow-x: hidden;
-    }
+/* ===== グリッド ===== */
+.glyph-grid {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 3px;
+}
 
-    .main-container {
-      width: 100%;
-      max-width: 1200px;
-      padding: 12px;
-      border: 8px solid transparent;
-      border-image: url("https://minato.beyondbedrock.org/web-apps/content/assets/images/container.png") 4 fill;
-    }
+.glyph-cell {
+  aspect-ratio: 1/1;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+}
 
-    .glyph-grid {
-      display: grid;
-      grid-template-columns: repeat(16, 1fr);
-      gap: 3px;
-      padding: 8px;
-    }
+.glyph-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
 
-    .glyph-cell {
-      aspect-ratio: 1/1;
-      background: rgba(0,0,0,0.3);
-      border: 1px solid rgba(255,255,255,0.2);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-    }
+.cell-label {
+  position: absolute;
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.6);
+}
 
-    .glyph-cell img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      image-rendering: pixelated;
-    }
+/* ===== UI ===== */
+.minecraft-button {
+  padding: 6px 12px;
+  cursor: pointer;
+}
 
-    .cell-label {
-      position: absolute;
-      font-size: 0.7rem;
-      color: rgba(255,255,255,0.6);
-    }
+.minecraft-input {
+  padding: 6px;
+}
 
-    .minecraft-button {
-      font-family: Minecraftia;
-      cursor: pointer;
-      padding: 6px 12px;
-    }
+/* ===== モーダル ===== */
+.modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  background: rgba(0,0,0,0.8);
+  justify-content: center;
+  align-items: center;
+}
 
-    .minecraft-input {
-      font-family: Minecraftia;
-      padding: 6px;
-    }
-
-    canvas { display:none; }
-  </style>
+.modal-content {
+  background: #1e1e1e;
+  padding: 20px;
+}
+</style>
 </head>
 
 <body>
 
 <!-- ===== UI ===== -->
-<div class="main-container">
-  <input id="output-name" class="minecraft-input" value="glyph_E9.png">
-  <button id="generate-button" class="minecraft-button">Download</button>
+<input id="output-name" value="glyph_E9.png" class="minecraft-input">
+<button id="generate-button" class="minecraft-button">Download</button>
+<button id="clear-button" class="minecraft-button">Clear</button>
+<input type="file" id="file-input" hidden>
 
-  <div id="glyph-grid" class="glyph-grid"></div>
-</div>
+<div id="glyph-grid" class="glyph-grid"></div>
 
-<canvas id="output-canvas" width="256" height="256"></canvas>
+<canvas id="canvas" width="256" height="256"></canvas>
 
 <script>
-/* ===== 基本データ ===== */
+/* ===== データ ===== */
 const LOCAL_KEY = "customImagesCache";
-const usedImages = new Set();
-const imageURIs = {};
 const glyphData = new Array(256).fill(null);
+const usedImages = new Set();
 
-let currentCellIndex = -1;
-
-const glyphGrid = document.getElementById("glyph-grid");
+let currentCell = -1;
 
 /* ===== 初期化 ===== */
 window.onload = () => {
-  createGlyphGrid();
-  loadSavedImages();
-  setupPaste();
+  createGrid();
+  loadSaved();
   setupEvents();
+  setupPaste();
 };
 
 /* ===== グリッド生成 ===== */
-function createGlyphGrid() {
+function createGrid() {
+  const grid = document.getElementById("glyph-grid");
+
   for (let i = 0; i < 256; i++) {
     const cell = document.createElement("div");
     cell.className = "glyph-cell";
@@ -132,19 +121,19 @@ function createGlyphGrid() {
     const label = document.createElement("span");
     label.className = "cell-label";
 
-    const row = Math.floor(i / 16).toString(16).toUpperCase();
-    const col = (i % 16).toString(16).toUpperCase();
-
+    const row = Math.floor(i/16).toString(16).toUpperCase();
+    const col = (i%16).toString(16).toUpperCase();
     label.textContent = row + col;
+
     cell.appendChild(label);
 
-    cell.onclick = () => currentCellIndex = i;
+    cell.onclick = () => currentCell = i;
 
-    glyphGrid.appendChild(cell);
+    grid.appendChild(cell);
   }
 }
 
-/* ===== 保存処理 ===== */
+/* ===== 保存 ===== */
 function saveImage(src) {
   if (usedImages.has(src)) return;
 
@@ -153,23 +142,20 @@ function saveImage(src) {
 }
 
 /* ===== 読み込み ===== */
-function loadSavedImages() {
+function loadSaved() {
   const data = localStorage.getItem(LOCAL_KEY);
   if (!data) return;
 
   try {
-    const arr = JSON.parse(data);
-    arr.forEach(src => usedImages.add(src));
-  } catch {
-    console.warn("load error");
-  }
+    JSON.parse(data).forEach(v => usedImages.add(v));
+  } catch {}
 }
 
 /* ===== 画像適用 ===== */
 function applyImage(src) {
-  if (currentCellIndex < 0) return;
+  if (currentCell < 0) return;
 
-  const cell = document.querySelector(`[data-index="${currentCellIndex}"]`);
+  const cell = document.querySelector(`[data-index="${currentCell}"]`);
   cell.innerHTML = "";
 
   const img = document.createElement("img");
@@ -177,11 +163,11 @@ function applyImage(src) {
 
   cell.appendChild(img);
 
-  glyphData[currentCellIndex] = { src };
+  glyphData[currentCell] = { src };
 }
 
 /* ===== アップロード ===== */
-function uploadImage(file) {
+function handleFile(file) {
   const reader = new FileReader();
 
   reader.onload = e => {
@@ -203,22 +189,22 @@ function uploadImage(file) {
 /* ===== ペースト ===== */
 function setupPaste() {
   document.addEventListener("paste", e => {
-    for (let item of e.clipboardData.items) {
+    for (const item of e.clipboardData.items) {
       if (item.type.includes("image")) {
-        uploadImage(item.getAsFile());
+        handleFile(item.getAsFile());
       }
     }
   });
 }
 
-/* ===== 出力 ===== */
+/* ===== 生成 ===== */
 function generate() {
-  const canvas = document.getElementById("output-canvas");
+  const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
 
   ctx.clearRect(0,0,256,256);
 
-  const promises = [];
+  const tasks = [];
 
   glyphData.forEach((g, i) => {
     if (!g) return;
@@ -227,7 +213,7 @@ function generate() {
     const x = (i % 16) * 16;
     const y = Math.floor(i / 16) * 16;
 
-    promises.push(new Promise(res => {
+    tasks.push(new Promise(res => {
       img.onload = () => {
         ctx.drawImage(img, x, y, 16, 16);
         res();
@@ -236,7 +222,7 @@ function generate() {
     }));
   });
 
-  Promise.all(promises).then(() => {
+  Promise.all(tasks).then(() => {
     const a = document.createElement("a");
     a.download = document.getElementById("output-name").value;
     a.href = canvas.toDataURL();
@@ -244,9 +230,39 @@ function generate() {
   });
 }
 
+/* ===== 全クリア ===== */
+function clearAll() {
+  if (!confirm("全部消す？")) return;
+
+  document.getElementById("glyph-grid").innerHTML = "";
+  createGrid();
+
+  for (let i = 0; i < 256; i++) {
+    glyphData[i] = null;
+  }
+}
+
 /* ===== イベント ===== */
 function setupEvents() {
   document.getElementById("generate-button").onclick = generate;
+  document.getElementById("clear-button").onclick = clearAll;
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "Delete" && currentCell >= 0) {
+      glyphData[currentCell] = null;
+      const cell = document.querySelector(`[data-index="${currentCell}"]`);
+      cell.innerHTML = "";
+    }
+  });
+
+  document.body.ondrop = e => {
+    e.preventDefault();
+    if (e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  document.body.ondragover = e => e.preventDefault();
 }
 </script>
 
