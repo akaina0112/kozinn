@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Textures to Glyph</title>
+
+  <style>
+    /* ===== フォント ===== */
+    @font-face {
+      font-family: Minecraftia;
+      src: url("https://minato.beyondbedrock.org/web-apps/content/assets/fonts/minecraft.otf") format("truetype");
+    }
+    @font-face {
+      font-family: MinecraftTen;
+      src: url("https://minato.beyondbedrock.org/web-apps/content/assets/fonts/minecraft-ten.ttf") format("truetype");
+    }
+    @font-face {
+      font-family: ar;
+      src: url("https://minato.beyondbedrock.org/web-apps/content/assets/fonts/arPix.ttf") format("truetype");
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Minecraftia", sans-serif;
+      background: #000;
+      color: #c6c6c6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    .main-container {
+      width: 100%;
+      max-width: 1200px;
+      padding: 12px;
+      border: 8px solid transparent;
+      border-image: url("https://minato.beyondbedrock.org/web-apps/content/assets/images/container.png") 4 fill;
+    }
+
+    .glyph-grid {
+      display: grid;
+      grid-template-columns: repeat(16, 1fr);
+      gap: 3px;
+      padding: 8px;
+    }
+
+    .glyph-cell {
+      aspect-ratio: 1/1;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .glyph-cell img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+    }
+
+    .cell-label {
+      position: absolute;
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .minecraft-button {
+      font-family: Minecraftia;
+      cursor: pointer;
+      padding: 6px 12px;
+    }
+
+    .minecraft-input {
+      font-family: Minecraftia;
+      padding: 6px;
+    }
+
+    canvas { display:none; }
+  </style>
+</head>
+
+<body>
+
+<!-- ===== UI ===== -->
+<div class="main-container">
+  <input id="output-name" class="minecraft-input" value="glyph_E9.png">
+  <button id="generate-button" class="minecraft-button">Download</button>
+
+  <div id="glyph-grid" class="glyph-grid"></div>
+</div>
+
+<canvas id="output-canvas" width="256" height="256"></canvas>
+
+<script>
+/* ===== 基本データ ===== */
+const LOCAL_KEY = "customImagesCache";
+const usedImages = new Set();
+const imageURIs = {};
+const glyphData = new Array(256).fill(null);
+
+let currentCellIndex = -1;
+
+const glyphGrid = document.getElementById("glyph-grid");
+
+/* ===== 初期化 ===== */
+window.onload = () => {
+  createGlyphGrid();
+  loadSavedImages();
+  setupPaste();
+  setupEvents();
+};
+
+/* ===== グリッド生成 ===== */
+function createGlyphGrid() {
+  for (let i = 0; i < 256; i++) {
+    const cell = document.createElement("div");
+    cell.className = "glyph-cell";
+    cell.dataset.index = i;
+
+    const label = document.createElement("span");
+    label.className = "cell-label";
+
+    const row = Math.floor(i / 16).toString(16).toUpperCase();
+    const col = (i % 16).toString(16).toUpperCase();
+
+    label.textContent = row + col;
+    cell.appendChild(label);
+
+    cell.onclick = () => currentCellIndex = i;
+
+    glyphGrid.appendChild(cell);
+  }
+}
+
+/* ===== 保存処理 ===== */
+function saveImage(src) {
+  if (usedImages.has(src)) return;
+
+  usedImages.add(src);
+  localStorage.setItem(LOCAL_KEY, JSON.stringify([...usedImages]));
+}
+
+/* ===== 読み込み ===== */
+function loadSavedImages() {
+  const data = localStorage.getItem(LOCAL_KEY);
+  if (!data) return;
+
+  try {
+    const arr = JSON.parse(data);
+    arr.forEach(src => usedImages.add(src));
+  } catch {
+    console.warn("load error");
+  }
+}
+
+/* ===== 画像適用 ===== */
+function applyImage(src) {
+  if (currentCellIndex < 0) return;
+
+  const cell = document.querySelector(`[data-index="${currentCellIndex}"]`);
+  cell.innerHTML = "";
+
+  const img = document.createElement("img");
+  img.src = src;
+
+  cell.appendChild(img);
+
+  glyphData[currentCellIndex] = { src };
+}
+
+/* ===== アップロード ===== */
+function uploadImage(file) {
+  const reader = new FileReader();
+
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      if (img.width <= 16 && img.height <= 16) {
+        saveImage(e.target.result);
+        applyImage(e.target.result);
+      } else {
+        alert("16x16以下のみ");
+      }
+    };
+    img.src = e.target.result;
+  };
+
+  reader.readAsDataURL(file);
+}
+
+/* ===== ペースト ===== */
+function setupPaste() {
+  document.addEventListener("paste", e => {
+    for (let item of e.clipboardData.items) {
+      if (item.type.includes("image")) {
+        uploadImage(item.getAsFile());
+      }
+    }
+  });
+}
+
+/* ===== 出力 ===== */
+function generate() {
+  const canvas = document.getElementById("output-canvas");
+  const ctx = canvas.getContext("2d");
+
+  ctx.clearRect(0,0,256,256);
+
+  const promises = [];
+
+  glyphData.forEach((g, i) => {
+    if (!g) return;
+
+    const img = new Image();
+    const x = (i % 16) * 16;
+    const y = Math.floor(i / 16) * 16;
+
+    promises.push(new Promise(res => {
+      img.onload = () => {
+        ctx.drawImage(img, x, y, 16, 16);
+        res();
+      };
+      img.src = g.src;
+    }));
+  });
+
+  Promise.all(promises).then(() => {
+    const a = document.createElement("a");
+    a.download = document.getElementById("output-name").value;
+    a.href = canvas.toDataURL();
+    a.click();
+  });
+}
+
+/* ===== イベント ===== */
+function setupEvents() {
+  document.getElementById("generate-button").onclick = generate;
+}
+</script>
+
+</body>
+</html>
