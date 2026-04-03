@@ -915,7 +915,9 @@
   <canvas id="output-canvas" width="256" height="256"></canvas>
 
   <script>
-
+    // ===== 追加データ =====
+const LOCAL_KEY = "customImagesCache";
+const usedImages = new Set();
     const imageURIs = {};
     const glyphData = new Array(256).fill(null);
     let currentCellIndex = -1;
@@ -931,10 +933,12 @@
     const outputName = document.getElementById('output-name');
 
     window.onload = () => {
-      createGlyphGrid();
-      loadVanillaItems();
-      setupEventListeners();
-      setupMobileUI();
+  createGlyphGrid();
+  loadVanillaItems();
+  loadSavedImages(); // ←追加
+  setupEventListeners();
+  setupMobileUI();
+  setupPaste(); // ←追加
     };
 
     function createGlyphGrid() {
@@ -1579,6 +1583,175 @@
         });
       }
     }
+
+// ===== ローカル保存読み込み =====
+function loadSavedImages() {
+  const data = localStorage.getItem(LOCAL_KEY);
+  if (!data) return;
+
+  try {
+    const parsed = JSON.parse(data);
+    parsed.forEach((src, i) => {
+      const name = "custom_" + i;
+      imageURIs[name] = src;
+      usedImages.add(src);
+      addVanillaImageToGrid(name, src);
+    });
+  } catch (e) {
+    console.warn("loadSavedImages error", e);
+  }
+}
+
+// ===== 保存 =====
+function saveImage(src) {
+  if (usedImages.has(src)) return;
+
+  usedImages.add(src);
+
+  const data = Array.from(usedImages);
+  try {
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.warn("saveImage error", e);
+  }
+}
+
+// ===== URL画像追加 =====
+function addImageFromURL(url) {
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+
+  img.onload = () => {
+    if (img.width === 16 && img.height === 16) {
+      const canvas = document.createElement("canvas");
+      canvas.width = 16;
+      canvas.height = 16;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+
+      const dataURL = canvas.toDataURL();
+
+      const name = "url_" + Date.now();
+      imageURIs[name] = dataURL;
+
+      saveImage(dataURL);
+      addVanillaImageToGrid(name, dataURL);
+    } else {
+      alert("16x16画像のみ対応");
+    }
+  };
+
+  img.onerror = () => {
+    alert("画像読み込み失敗");
+  };
+
+  img.src = url;
+}
+
+// ===== ペースト対応 =====
+function setupPaste() {
+  document.addEventListener("paste", (e) => {
+    const items = e.clipboardData.items;
+
+    for (let item of items) {
+      if (item.type.indexOf("image") !== -1) {
+        const file = item.getAsFile();
+        const reader = new FileReader();
+
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            if (img.width <= 16 && img.height <= 16) {
+
+              const canvas = document.createElement("canvas");
+              canvas.width = 16;
+              canvas.height = 16;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0);
+
+              const dataURL = canvas.toDataURL();
+              const name = "paste_" + Date.now();
+
+              imageURIs[name] = dataURL;
+              saveImage(dataURL);
+              addVanillaImageToGrid(name, dataURL);
+
+            } else {
+              alert("16x16以下のみ");
+            }
+          };
+          img.src = ev.target.result;
+        };
+
+        reader.readAsDataURL(file);
+      }
+    }
+  });
+}
+
+// ===== 既存処理に追加（ここ重要） =====
+
+// ▼ uploadCustomImage に追加
+function uploadCustomImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+
+      if (img.width <= 16 && img.height <= 16) {
+
+        saveImage(e.target.result); // ←追加
+        applyCustomImage(e.target.result);
+
+      } else {
+        alert('Image must be 16x16 pixels or smaller!');
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+
+  event.target.value = '';
+}
+
+// ▼ selectVanillaImage に追加
+function selectVanillaImage(name) {
+  if (currentCellIndex >= 0) {
+
+    saveImage(imageURIs[name]); // ←追加
+
+    const cell = document.querySelector(`.glyph-cell[data-index="${currentCellIndex}"]`);
+
+    const newCell = document.createElement('div');
+    newCell.classList.add('glyph-cell');
+    newCell.dataset.index = currentCellIndex;
+    newCell.dataset.codePoint = cell.dataset.codePoint;
+
+    const img = document.createElement('img');
+    img.src = imageURIs[name];
+    newCell.appendChild(img);
+
+    cell.parentNode.replaceChild(newCell, cell);
+
+    newCell.addEventListener('click', () => openCellOptions(currentCellIndex));
+
+    glyphData[currentCellIndex] = {
+      src: imageURIs[name],
+      name: name
+    };
+
+    closeAllModals();
+  }
+}
+
+// ===== URL入力UI用（任意でHTMLに追加） =====
+function promptAddURL() {
+  const url = prompt("画像URLを入力");
+  if (url) addImageFromURL(url);
+}
   </script>
 
 </body>
