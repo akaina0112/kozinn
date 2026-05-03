@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>日付計算</title>
+</head>
+<body>
+
+<h2 id="today"></h2>
+
+<input type="number" id="days" placeholder="日数（例: 3）">
+
+<button onclick="calcPast()">○日前</button>
+<button onclick="calcFuture()">○日後</button>
+
+<p id="result"></p>
+
+<script>
+function formatDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}/${m}/${d}`;
+}
+
+// 今日の日付
+const today = new Date();
+document.getElementById("today").textContent =
+  "今日の日付: " + formatDate(today);
+
+// ○日前
+function calcPast() {
+  const input = Number(document.getElementById("days").value);
+  if (!input) return;
+
+  const d = new Date();
+  d.setDate(d.getDate() - input);
+
+  document.getElementById("result").textContent =
+    `今日から${input}日前: ${formatDate(d)}`;
+}
+
+// ○日後
+function calcFuture() {
+  const input = Number(document.getElementById("days").value);
+  if (!input) return;
+
+  const d = new Date();
+  d.setDate(d.getDate() + input);
+
+  document.getElementById("result").textContent =
+    `今日から${input}日後: ${formatDate(d)}`;
+}
+</script>
+
+</body>
+</html>
