@@ -1,19 +1,61 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>日付計算</title>
+<meta charset="UTF-8">
+<title>日付計算</title>
+
+<style>
+/* 背景（全体） */
+body {
+  margin: 0;
+  height: 100vh;
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: sans-serif;
+}
+
+/* 中央コンテンツ */
+.container {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  text-align: center;
+  width: 300px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}
+
+input {
+  width: 80%;
+  padding: 8px;
+  margin: 10px 0;
+  font-size: 16px;
+}
+
+button {
+  padding: 8px 12px;
+  margin: 5px;
+  cursor: pointer;
+}
+</style>
 </head>
+
 <body>
 
-<h2 id="today"></h2>
+<div class="container">
+  <h2 id="today"></h2>
 
-<input type="number" id="days" placeholder="日数（例: 3）">
+  <input type="number" id="days" placeholder="日数を入力">
 
-<button onclick="calcPast()">○日前</button>
-<button onclick="calcFuture()">○日後</button>
+  <div>
+    <button onclick="calcPast()">○日前</button>
+    <button onclick="calcFuture()">○日後</button>
+  </div>
 
-<p id="result"></p>
+  <p id="result"></p>
+</div>
 
 <script>
 function formatDate(date) {
@@ -23,7 +65,7 @@ function formatDate(date) {
   return `${y}/${m}/${d}`;
 }
 
-// 今日の日付
+// 今日の日付表示
 const today = new Date();
 document.getElementById("today").textContent =
   "今日の日付: " + formatDate(today);
